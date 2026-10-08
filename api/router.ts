@@ -7,6 +7,7 @@ import { open, seal } from "../lib/crypto.js";
 import { sql } from "../lib/db.js";
 import { loadOpportunity, rebuildDetails, submitCorrection, submitMessage, submitRepoScan } from "../lib/pipeline.js";
 import { transcribeImage } from "../lib/providers.js";
+import { communityStats, reportOutcome } from "../lib/community.js";
 import { exportWallet, provisionWallet, publicView, walletFor } from "../lib/wallet.js";
 
 export const config = { maxDuration: 300 };
@@ -31,6 +32,7 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
       confirmed_general_memory_blobs: Number(gm[0].n),
       per_user: rows.map((r, i) => ({ user: `user ${i + 1}`, confirmed_blobs: Number(r.confirmed), opportunities: Number(r.opps), active_days: Number(r.days), first: r.first, last: r.last })),
       network: "mainnet",
+      community: await communityStats(),
     });
   }
 
@@ -52,12 +54,12 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
   if (!consented) throw Object.assign(new Error("accept the processing notice first"), { status: 403 });
 
   if (path === "opportunities" && m === "GET") {
-    const rows = await sql`select o.id, o.label_ct, o.status, o.last_activity_at, o.details_ct,
+    const rows = await sql`select o.id, o.label_ct, o.status, o.last_activity_at, o.details_ct, o.risk_level, o.risk_p, o.outcome,
                                   (select count(*) from memory_events e where e.opportunity_id = o.id) as events
                            from opportunities o where o.user_id = ${userId} and o.status <> 'excluded' order by o.last_activity_at desc`;
     return res.json(rows.map((r) => {
       const details = r.details_ct ? open<Record<string, any>>(r.details_ct) : {};
-      return { id: r.id, label: open(r.label_ct), status: r.status, last_activity_at: r.last_activity_at, events: Number(r.events),
+      return { id: r.id, label: open(r.label_ct), status: r.status, last_activity_at: r.last_activity_at, events: Number(r.events), risk_level: r.risk_level, risk_p: r.risk_p, outcome: r.outcome,
                conflicts: Object.values(details).filter((t: any) => t.state === "conflicting_claims").length };
     }));
   }
@@ -75,7 +77,7 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
                              from memory_events e left join assessments a on a.event_id = e.id where e.opportunity_id = ${o.id} order by e.seq`;
     const states = new Map((await sql`select claim_id, state from claim_states where opportunity_id = ${o.id}`).map((r) => [r.claim_id, r.state]));
     return res.json({
-      id: o.id, label: open(o.label_ct), status: o.status,
+      id: o.id, label: open(o.label_ct), status: o.status, risk_level: o.risk_level, risk_p: o.risk_p, outcome: o.outcome,
       details: o.details_ct ? open(o.details_ct) : {},
       timeline: events.map((e) => {
         const bd = open<any>(e.body_ct);
@@ -97,6 +99,12 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
     if (Number(n) >= cfg.dailyLimit) throw Object.assign(new Error("daily limit reached, try again tomorrow"), { status: 429 });
     const origin = b.origin === "screenshot" ? "screenshot" : "user_paste";
     return res.json(await submitMessage(userId, o.id, text, String(b.idem ?? randomUUID()), open(o.label_ct), origin, origin === "screenshot" ? String(b.platform ?? "other").slice(0, 20) : undefined));
+  }
+  if (path === "outcome" && m === "POST") {
+    const o = await loadOpportunity(userId, String(b.id));
+    const outcome = ["scam", "legit", "unsure"].includes(b.outcome) ? b.outcome : null;
+    if (!outcome) throw Object.assign(new Error("outcome must be scam, legit or unsure"), { status: 400 });
+    return res.json(await reportOutcome(userId, o.id, outcome, b.share !== false));
   }
   if (path === "scan" && m === "POST") {
     const o = await loadOpportunity(userId, String(b.id));

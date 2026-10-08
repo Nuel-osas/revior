@@ -490,6 +490,29 @@
     .rail .sid { font-size: 11px; padding: 3px 6px; }
     .finding .loc { margin-left: 0; }
   }
+  .verdict { border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; border: 1px solid; }
+  .verdict.v-high { background: #fff1f0; border-color: #f6c4c0; }
+  .verdict.v-med { background: #fff8e6; border-color: #f2d58b; }
+  .verdict.v-low { background: #ecf8ef; border-color: #b9e4c4; }
+  .v-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .v-label { font-weight: 700; font-size: 18px; }
+  .v-high .v-label { color: #b42318; } .v-med .v-label { color: #a16207; } .v-low .v-label { color: #15803d; }
+  .v-p { font-size: 13px; color: var(--muted); }
+  .v-sig { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .v-sig span { font-size: 12.5px; background: rgba(255,255,255,.8); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; }
+  .v-well { margin-top: 10px; border-top: 1px dashed rgba(0,0,0,.12); padding-top: 8px; }
+  .v-well ul { margin: 4px 0 0; padding-left: 18px; font-size: 13.5px; }
+  .v-well li { margin: 3px 0; }
+  .badge.risk-h { background: #fde7e6; color: #b42318; }
+  .badge.risk-m { background: #fdf3d8; color: #a16207; }
+  .badge.risk-l { background: #e4f5e9; color: #15803d; }
+  .well-grid { display: grid; grid-template-columns: 1fr auto 1.3fr; gap: 18px; align-items: center; }
+  .well-card { background: #fff; color: #000; border-radius: 22px; padding: 20px; box-shadow: 0 30px 60px -34px rgba(94,14,255,.6); }
+  .wc-t { font-size: 13px; color: #6f7477; margin-bottom: 8px; }
+  .wc-m { background: #f1ece2; border-radius: 4px 14px 14px 14px; padding: 10px 13px; font-size: 14.5px; }
+  .wc-a { margin-top: 10px; font-size: 14px; }
+  .well-arrow { font-size: 34px; color: var(--w-lav); }
+  @media (max-width: 980px) { .well-grid { grid-template-columns: 1fr; } .well-arrow { transform: rotate(90deg); justify-self: center; } }
 </style>
 </head>
 <body>
@@ -559,7 +582,7 @@ function renderLanding() {
   <div class="lp">
     <nav class="lp-nav">
       <a class="lp-brand" href="#">${MARK}Revoir</a>
-      <div class="lp-links"><a href="#scan">Repo scan</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#ownership">Ownership</a><a href="https://github.com/Nuel-osas/revior" target="_blank">GitHub</a></div>
+      <div class="lp-links"><a href="#well">Community</a><a href="#scan">Repo scan</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#ownership">Ownership</a><a href="https://github.com/Nuel-osas/revior" target="_blank">GitHub</a></div>
       <a class="pill" href="/auth/google/start">Sign in ${ARROW}</a>
     </nav>
 
@@ -568,7 +591,7 @@ function renderLanding() {
       ${err ? `<div class="lp-err">${esc(err)}</div><br/>` : ""}
       <span class="badge-pill"><span class="dots"><span style="background:#5e0eff">W</span><span style="background:#3395ee">S</span><span style="background:#14181b">J</span></span>Built on Walrus Memory · Sui mainnet</span>
       <h1>See every offer <span class="gem">${EYE}</span> again, before you say yes.</h1>
-      <p class="sub">Paste each message from a recruiter or collaborator as it arrives. Revoir remembers what they told you, shows exactly what changed, and scans any GitHub repo they ask you to run before it touches your machine.</p>
+      <p class="sub">Paste each message from a recruiter or collaborator as it arrives. Revoir tells you if it looks like a scam, shows exactly what changed since their first message, and learns from what happened to everyone else.</p>
       <div class="hero-ctas">
         <a class="pill dark" href="/auth/google/start">Continue with Google ${ARROW}</a>
         <a class="pill" href="#scan"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>Got a take-home repo? Scan it first</a>
@@ -593,7 +616,7 @@ function renderLanding() {
             <div class="hd">Frontend contract <span>S2 · Thursday</span></div>
             <div class="lp-msg">Quick update: please send a refundable $60 onboarding deposit today. Our HR partner Mark will finish onboarding on Telegram.</div>
             <div class="lp-bot"><span class="av">${CYCLE("#fff", 2.2).replace("<svg ", '<svg width="17" height="17" ')}</span>
-              <div class="body"><b>The offer now asks for a deposit, after saying there are no fees.</b>
+              <div class="body"><span class="badge risk-h" style="margin-bottom:6px;display:inline-block">Likely scam · 94%</span><br/><b>The offer now asks for a deposit, after saying there are no fees.</b>
                 <div class="tn">
                   <div class="then"><div class="tag">Then · S1</div><div class="q">"Applicants pay no fees."</div></div>
                   <div class="now"><div class="tag" style="color:var(--now)">Now · S2</div><div class="q">"send a refundable $60 onboarding deposit"</div></div>
@@ -668,6 +691,25 @@ function renderLanding() {
       </div>
     </section>
 
+    <section class="lp-sec" id="well">
+      <h2 class="two-tone"><span>One person's bad experience</span>protects everyone after them.</h2>
+      <p class="lede">When an offer ends, people tell Revoir how it went. Their scam numbers, wallets, domains and handles become hashed warnings, and the tactics become anonymous patterns in a shared memory on Walrus. The next person who meets them is told before they pay.</p>
+      <div class="well-grid">
+        <div class="well-card">
+          <div class="wc-t">Ada, Tuesday</div>
+          <div class="wc-m">"Pay the $45 verification fee to reserve your slot." <span class="src">S2</span></div>
+          <div class="wc-a">Ada reports: <b>It was a scam</b></div>
+        </div>
+        <div class="well-arrow">→</div>
+        <div class="well-card">
+          <div class="wc-t">Tunde, Thursday · different company, same number</div>
+          <div class="wc-m">"Please message our coordinator on 0803-555-4521."</div>
+          <div class="verdict v-high" style="margin:10px 0 0"><div class="v-h"><span class="v-label">Likely scam</span><span class="v-p">96% scam likelihood</span></div><div class="v-well"><ul><li><b>Known scam indicator:</b> this phone number (+0803 ••• 4521) was reported as a scam by 2 Revoir users.</li></ul></div></div>
+        </div>
+      </div>
+      <p class="lede" style="margin-top:22px;font-size:14px">Counts only. One vote per person per indicator, "known" needs two different people, and legit reports count too. Illustrative example.</p>
+    </section>
+
     <section class="lp-sec" id="how">
       <h2 class="two-tone"><span>Every message remembered.</span>Every change explained.</h2>
       <div class="duo">
@@ -714,7 +756,8 @@ function renderLanding() {
         <div><h2>Frequently asked questions.</h2><p class="lede">What Revoir does, and just as importantly, what it doesn't.</p></div>
         <div>
           <details open><summary>Can Revoir check a repo they asked me to run?</summary><p>Yes. Paste the public GitHub link (or a message that contains it) and click Scan repo. Revoir downloads the code without running it, checks for install-time scripts, editor auto-run tasks, obfuscation and credential or wallet theft, and DeepSeek quotes the exact lines involved. It can't prove a repo is safe, so treat "no red flags found" as "nothing obvious in what was scanned", and still run unfamiliar code only in a throwaway environment.</p></details>
-          <details><summary>Will Revoir tell me if an offer is a scam?</summary><p>No. It never labels an offer safe or a scam. It shows what changed between messages, with quotes and sources, what is still unknown, and one independent check to make before you pay, sign or share anything.</p></details>
+          <details><summary>Will Revoir tell me if an offer is a scam?</summary><p>Yes. Every message gets a verdict: Likely scam, Suspicious, or No scam signals found, with a probability from Jev and the exact reasons: fees, pressure, moving you to Telegram, contradicted promises, repo red flags, and what other Revoir users reported. "No scam signals found" means nothing matched, not that an offer is guaranteed, so the next check is always there too.</p></details>
+          <details><summary>How does Revoir learn from other people?</summary><p>When an offer ends, you can tell Revoir whether it was a scam or legit. Phone numbers, emails, websites, handles, wallet addresses and repos from that offer are stored as hashed indicators with your one vote, and an anonymous description of the tactics is saved to a shared memory on Walrus. When someone else meets the same number or the same script, Revoir warns them: "reported as a scam by 2 Revoir users". Nobody's messages are ever shown to anyone else.</p></details>
           <details><summary>Who can read my messages?</summary><p>The text you paste is processed by DeepSeek (reading and explaining), Jev by TypeSafe (comparing claims) and the Walrus Memory service, which encrypts it with Seal before storing it on Walrus. Please remove passwords, codes and ID numbers before pasting.</p></details>
           <details><summary>Why is memory on Walrus?</summary><p>So the record of what you were told outlives any one chat or device, and belongs to you. Each message is an encrypted blob owned by your wallet on Sui mainnet.</p></details>
           <details><summary>Do I pay anything?</summary><p>No. Revoir sponsors the small fees for creating your wallet and memory account, and the Walrus Memory service pays for storage.</p></details>
@@ -799,7 +842,7 @@ async function renderHome() {
           <div class="tag">${o.status === "closed" ? "Closed" : "Active"} · ${day(o.last_activity_at)}</div>
           <h3>${esc(o.label)}</h3>
           <div class="small muted">${o.events} message${o.events === 1 ? "" : "s"} remembered</div>
-          <div class="st">${o.conflicts ? `<span class="badge now">${o.conflicts} changed term${o.conflicts === 1 ? "" : "s"}</span>` : o.events ? `<span class="badge ok">no changes yet</span>` : `<span class="badge">waiting for the first message</span>`}</div>
+          <div class="st">${o.risk_level ? `<span class="badge ${o.risk_level === "high" ? "risk-h" : o.risk_level === "medium" ? "risk-m" : "risk-l"}">${o.risk_level === "high" ? "Likely scam" : o.risk_level === "medium" ? "Suspicious" : "No scam signals"}${typeof o.risk_p === "number" ? ` · ${Math.round(o.risk_p * 100)}%` : ""}</span>` : ""}${o.outcome ? `<span class="badge">ended: ${o.outcome === "unsure" ? "not sure" : esc(o.outcome)}</span>` : ""}${o.conflicts ? `<span class="badge now">${o.conflicts} changed term${o.conflicts === 1 ? "" : "s"}</span>` : o.risk_level ? "" : o.events ? `<span class="badge ok">no changes yet</span>` : `<span class="badge">waiting for the first message</span>`}</div>
         </div>`).join("")}
     </div>
   </div>`;
@@ -842,6 +885,22 @@ function thenNow(c, a, used) {
   </div>`;
 }
 
+const KIND = { phone: "phone number", email: "email address", domain: "website", handle: "Telegram or social handle", wallet: "wallet address", repo: "GitHub repo" };
+function renderVerdict(v) {
+  if (!v) return "";
+  const cls = v.level === "high" ? "v-high" : v.level === "medium" ? "v-med" : "v-low";
+  const pct = typeof v.probability === "number" ? `<span class="v-p">${Math.round(v.probability * 100)}% scam likelihood</span>` : "";
+  const comm = (v.community?.matches || []).filter((m) => m.scam_users || m.legit_users).map((m) =>
+    `<li><b>${m.known_scam ? "Known scam indicator" : m.scam_users > m.legit_users ? "Reported before" : "Seen before"}:</b> this ${esc(KIND[m.kind] || m.kind)} (${esc(m.hint)}) was reported as a scam by ${m.scam_users} Revoir user${m.scam_users === 1 ? "" : "s"}${m.legit_users ? ` and as legit by ${m.legit_users}` : ""}.</li>`).join("");
+  const sim = (v.community?.similar || []).slice(0, 2).map((p) =>
+    `<li><b>Matches a pattern others reported as ${esc(p.outcome)}:</b> "${esc(p.summary.slice(0, 220))}${p.summary.length > 220 ? "…" : ""}"</li>`).join("");
+  return `<div class="verdict ${cls}">
+    <div class="v-h"><span class="v-label">${esc(v.label)}</span>${pct}</div>
+    ${v.signals?.length ? `<div class="v-sig">${v.signals.map((x) => `<span>${esc(x)}</span>`).join("")}</div>` : ""}
+    ${comm || sim ? `<div class="v-well"><div class="tag">From the Revoir community</div><ul>${comm}${sim}</ul></div>` : ""}
+  </div>`;
+}
+
 function renderLook(e) {
   const a = e.assessment;
   if (!a) return "";
@@ -853,6 +912,7 @@ function renderLook(e) {
   const notes = changes ? "" : (a.notes || []).map((n) => `<p style="margin:8px 0 0">${esc(n.text)} ${(n.sources || []).map((s) => `<span class="src" data-src="${esc(s)}">${esc(s)}</span>`).join(" ")}</p>`).join("");
   const jev = (a.jev || []).map((j) => `<div class="jrow">${esc(j.pair.prior.source)} → ${esc(j.pair.current.source)} · ${esc(j.pair.topic)} · <b>${esc(j.choice)}</b> ${(j.probabilities[j.choice] ?? 0).toFixed(2)}<br/>"${esc(j.pair.prior.quote)}" vs "${esc(j.pair.current.quote)}"</div>`).join("");
   return `<div class="look">
+    ${renderVerdict(a.verdict)}
     <div class="kicker"><span class="eye">Second look</span><span class="tag">${isFirst ? (inside ? "change found inside this message" : "baseline saved") : `${a.recall?.recalled_events ?? 0} earlier message${a.recall?.recalled_events === 1 ? "" : "s"} recalled from Walrus`}</span></div>
     <h4>${esc(a.headline)}</h4>
     ${base}${changes}${isFirst ? "" : notes}
@@ -885,6 +945,8 @@ function paintOffer(keepScroll) {
     <div class="ohead">
       <button class="text" id="backBtn">← All offers</button>
       <h1 class="serif">${esc(o.label)}</h1>
+      ${o.outcome ? `<span class="badge ${o.outcome === "scam" ? "now" : o.outcome === "legit" ? "ok" : ""}">You reported: ${o.outcome === "unsure" ? "not sure" : o.outcome}</span>` : ""}
+      <button class="ghost" id="endBtn">${o.outcome ? "Change outcome" : "How did this end?"}</button>
       <button class="ghost" id="stBtn">${closed ? "Reopen" : "Close"}</button>
       <button class="text" id="fgBtn">Forget</button>
     </div>
@@ -926,6 +988,7 @@ function paintOffer(keepScroll) {
   $("#backBtn").onclick = () => (location.hash = "#/");
   $("#stBtn").onclick = async () => { await api("status", { id: o.id, status: closed ? "active" : "closed" }); renderOffer(o.id); };
   $("#fgBtn").onclick = forgetOffer;
+  $("#endBtn").onclick = askOutcome;
   if (!closed) {
     $("#send").onclick = send;
     $("#msg").onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); };
@@ -1013,6 +1076,7 @@ function renderScan(e) {
   const at = a.commit || a.ref || "HEAD";
   const fileUrl = (f) => `https://github.com/${a.repo}/blob/${at}/${f.file}${f.line ? `#L${f.line}` : ""}`;
   return `<div class="scan ${L[1]}">
+    ${renderVerdict(a.verdict)}
     <div class="scan-h"><span class="scan-badge">${L[0]}</span><a href="${esc(a.url)}" target="_blank">${esc(a.repo)}</a><span class="muted small">@ ${esc(String(at).slice(0, 7))}</span></div>
     <p class="scan-sum">${esc(a.summary)}</p>
     ${(a.install_behavior || []).length ? `<div class="scan-run"><div class="tag">Runs automatically when you install or open it</div><ul>${a.install_behavior.map((b) => `<li>${esc(b)}</li>`).join("")}</ul></div>` : ""}
@@ -1117,6 +1181,18 @@ function correct(claimId) {
   };
   $("#fixGo").onclick = () => $("#fix").value.trim() && go("replace");
   $("#wd").onclick = () => go("withdraw");
+}
+
+function askOutcome() {
+  modal(`<div class="tag">How did this end?</div><h2 class="serif" style="margin:.2em 0 .5em;font-size:24px">Help the next person see it sooner.</h2>
+    <p class="muted small">Your answer becomes part of Revoir's shared memory. If you share, Revoir adds the phone numbers, emails, websites, handles, wallet addresses and repos from this offer as <b>hashed</b> indicators with one vote from you, plus an <b>anonymous</b> description of the tactics (no names, numbers or links) stored on Walrus. Other people only ever see counts, like "reported as a scam by 2 users". Your messages are never shown to anyone.</p>
+    <label class="small" style="display:flex;gap:8px;align-items:center;margin:12px 0"><input type="checkbox" id="share" checked style="width:auto" /> Share anonymised indicators with the Revoir community</label>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="danger" data-out="scam">It was a scam</button><button style="background:#15803d" data-out="legit">It was legit</button><button class="ghost" data-out="unsure">Not sure yet</button></div>`);
+  $$("[data-out]").forEach((b) => (b.onclick = async () => {
+    b.disabled = true; b.innerHTML = `<span class="spin"></span>`;
+    try { const r = await api("outcome", { id: current.id, outcome: b.dataset.out, share: $("#share").checked }); closeModal(); toast(r.shared ? `Thank you. ${r.indicators} indicator${r.indicators === 1 ? "" : "s"} added to the community well.` : "Saved for you only."); renderOffer(current.id); }
+    catch (e) { toast(e.message); b.disabled = false; }
+  }));
 }
 
 function forgetOffer() {

@@ -75,7 +75,7 @@ Rules:
 - Cite only source ids you were given. Every change and note must cite sources.
 - At most 3 changes, most important first (payments and documents before anything else). Merge changes about the same condition into one. At most 2 notes, and never repeat a change as a note.
 - Only report a change Jev classified as contradiction or change with probability >= 0.5, unless the texts plainly show it.
-- Never say scam, fraud, legit, safe, verified, or give a probability of fraud. Describe what changed and what to check.
+- A separate scam verdict (with its own probability) is shown next to your answer, so do not give a probability yourself. You may name common scam tactics plainly (upfront fees, moving to Telegram, payment links), but never call an offer verified, legitimate or safe.
 - Never suggest testing an offer by paying, sharing codes or documents, installing files, or connecting a wallet.
 - A change can also sit inside one message (prior and current are the same source id, e.g. an earlier line says "no fee" and a later line asks for a fee). Report it like any other change.
 - If there are no earlier sources and no change inside the message, say what is claimed, what cannot be confirmed from the message alone, and that it is saved for later comparison.
@@ -172,9 +172,19 @@ export const archiveText = (eventId: string, seq: number, kind: string, source: 
   [`[rv1 ev=${eventId} S${seq} ${kind}]`, source, ...claims.map((c) => `- ${c.topic}: ${c.statement}`)].join("\n");
 export const parseEventId = (text: string) => text.match(/^\[rv1 ev=([0-9a-f-]{36}) /)?.[1] ?? null;
 
+// The relayer rate-limits per delegate key (429 with retry_after_seconds). Wait it out instead of failing the write.
 export async function archive(mw: MemWal, text: string, namespace: string) {
-  const job = await mw.rememberAsync(text, namespace);
-  return job.job_id as string;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const job = await mw.rememberAsync(text, namespace);
+      return job.job_id as string;
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      if (!/429|rate limit/i.test(msg) || attempt >= 4) throw e;
+      const wait = Number(msg.match(/retry_after_seconds"?:\s*(\d+)/)?.[1] ?? 20);
+      await new Promise((r) => setTimeout(r, Math.min(wait, 70) * 1000 + attempt * 1000));
+    }
+  }
 }
 export async function archiveStatus(mw: MemWal, jobId: string) {
   const s: any = await mw.getRememberStatus(jobId);

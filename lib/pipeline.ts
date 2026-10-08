@@ -9,6 +9,23 @@ import { generalNamespace, open, opportunityNamespace, seal, sha256 } from "./cr
 import { archive, archiveStatus, archiveText, compare, explain, extractClaims, operatorMemwal, parseEventId, recallIn, type Claim, type Pair, type Topic } from "./providers.js";
 import { memwalFor } from "./wallet.js";
 import { parseGithubUrl, scanRepo } from "./repo-scan.js";
+import { extractIndicators, lookup, similarPatterns } from "./community.js";
+import { decide, scamProbability, signalsFrom, type Verdict } from "./verdict.js";
+
+// Verdict for the offer as remembered so far: Jev probability + red-flag signals + the community well.
+async function offerVerdict(oppId: string, allTexts: string[], claims: any[], changes: { relation: string; what: string }[], newestText: string): Promise<Verdict> {
+  const scans = await sql`select a.body_ct from assessments a join memory_events e on e.id = a.event_id where e.opportunity_id = ${oppId} and e.kind = 'repo_scan'`;
+  const repoLevels = scans.map((r) => open<any>(r.body_ct).level as string);
+  const text = allTexts.join("\n");
+  const signals = signalsFrom(claims, changes, repoLevels, text);
+  const [matches, similar] = await Promise.all([lookup(extractIndicators(text)).catch(() => []), similarPatterns(newestText.slice(0, 1500))]);
+  const community = { matches, similar };
+  const p = await scamProbability(claims, changes, signals, community);
+  return decide(p, signals, community);
+}
+async function storeRisk(oppId: string, v: Verdict) {
+  await sql`update opportunities set risk_level = ${v.level}, risk_p = ${v.probability} where id = ${oppId}`;
+}
 
 // Each user's memory lives in their own MemWal account, owned by their custodial wallet.
 const memoryOf = async (userId: string) => (await memwalFor(userId)) ?? operatorMemwal();
@@ -172,6 +189,15 @@ export async function submitMessage(userId: string, oppId: string, text: string,
     models: { extractor: extracted.model, explainer: ex.model },
     timings_ms: { extract: tExtract - t0, recall: tRecall - tExtract, jev: tJev - tRecall, explain: Date.now() - tJev },
   };
+  const verdict = await offerVerdict(
+    oppId,
+    [...events.map((e) => e.body.source.text), text],
+    [...prior.map((c) => ({ ...c })), ...extracted.claims.map((c) => ({ ...c, source: `S${ev.seq}` }))],
+    assessment.changes,
+    text,
+  );
+  (assessment as any).verdict = verdict;
+  await storeRisk(oppId, verdict);
   await sql`insert into assessments (opportunity_id, event_id, body_ct) values (${oppId}, ${ev.id}, ${seal(assessment)})`;
 
   // Contradicted earlier claims become "disputed" (kept, never overwritten).
@@ -209,7 +235,11 @@ export async function submitRepoScan(userId: string, oppId: string, url: string,
     ...scan.findings.map((f: any) => `- ${f.severity}: ${f.what} (${f.file}:${f.line ?? "?"})`),
   ].join("\n");
   archiveLater(userId, "memory_events", ev.id, memo, opportunityNamespace(userId, oppId));
-  const assessment = { kind: "repo_scan", source_id: `S${ev.seq}`, ...scan };
+  const priorEvents = await confirmedEvents(oppId);
+  const verdict = await offerVerdict(oppId, priorEvents.map((e) => e.body.source.text).concat(`${scan.url}`), priorEvents.flatMap((e) => e.body.claims.map((c: Claim) => ({ ...c, source: `S${e.seq}` }))), [], scan.summary);
+  if (scan.level === "red_flags" && verdict.level !== "high") { verdict.level = "high"; verdict.label = "Likely scam"; }
+  await storeRisk(oppId, verdict);
+  const assessment = { kind: "repo_scan", source_id: `S${ev.seq}`, ...scan, verdict };
   await sql`insert into assessments (opportunity_id, event_id, body_ct) values (${oppId}, ${ev.id}, ${seal(assessment)})`;
   if (scan.level !== "no_red_flags_found" && scan.next_step) await addOpenCheck(userId, oppId, ev.id, label, `Repo ${scan.repo}: ${scan.next_step}`);
   return { event_id: ev.id, source_id: `S${ev.seq}`, assessment };

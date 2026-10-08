@@ -13,7 +13,7 @@ import { memwalFor } from "./wallet.js";
 const memoryOf = async (userId: string) => (await memwalFor(userId)) ?? operatorMemwal();
 
 type EventBody = {
-  source: { text: string; origin: "user_paste"; received_at: string };
+  source: { text: string; origin: "user_paste" | "screenshot"; platform?: string; received_at: string };
   claims: Claim[];
   correction?: { target_claim_ids: string[]; action: "replace" | "withdraw"; explanation: string };
   verification?: { target: string; method: string; result: "reported_confirmed" | "reported_denied" | "inconclusive" };
@@ -87,10 +87,10 @@ async function freezeEvent(userId: string, oppId: string, kind: EventBody extend
   return { id, seq: o.seq as number, duplicate: false };
 }
 
-export async function submitMessage(userId: string, oppId: string, text: string, idem: string, label: string) {
+export async function submitMessage(userId: string, oppId: string, text: string, idem: string, label: string, origin: "user_paste" | "screenshot" = "user_paste", platform?: string) {
   const t0 = Date.now();
   const extracted = await extractClaims(text);
-  const body: EventBody = { source: { text, origin: "user_paste", received_at: new Date().toISOString() }, claims: extracted.claims, provenance: { extractor: extracted.model } };
+  const body: EventBody = { source: { text, origin, ...(platform ? { platform } : {}), received_at: new Date().toISOString() }, claims: extracted.claims, provenance: { extractor: extracted.model } };
   const ev = await freezeEvent(userId, oppId, "source_message", body, idem);
   if (ev.duplicate) return { duplicate: true, event_id: ev.id };
   const ns = opportunityNamespace(userId, oppId);
@@ -132,6 +132,16 @@ export async function submitMessage(userId: string, oppId: string, text: string,
       pairs.push({ id: `p${pairs.length + 1}`, topic: c.topic, prior: { source: p.source, statement: p.statement, quote: p.quote }, current: { source: `S${ev.seq}`, statement: c.statement, quote: c.quote } });
     }
   }
+  // A screenshot or long paste can hold the whole story ("no fee" ... "pay the $45 fee"), so also compare
+  // claims within this message, earlier line against later line.
+  const curOrdered = [...extracted.claims].sort((a, b) => text.indexOf(a.quote) - text.indexOf(b.quote));
+  for (let i = 0; i < curOrdered.length && pairs.length < 8; i++) {
+    for (let j = i + 1; j < curOrdered.length && pairs.length < 8; j++) {
+      const a = curOrdered[i], b = curOrdered[j];
+      if (!RELATED[b.topic].includes(a.topic) || a.quote === b.quote) continue;
+      pairs.push({ id: `p${pairs.length + 1}`, topic: b.topic, prior: { source: `S${ev.seq}`, statement: a.statement, quote: a.quote }, current: { source: `S${ev.seq}`, statement: b.statement, quote: b.quote } });
+    }
+  }
   const jev = await compare(pairs);
   const tJev = Date.now();
 
@@ -169,6 +179,11 @@ export async function submitMessage(userId: string, oppId: string, text: string,
     const p = pairs.find((x) => x.id === r.id)!;
     const old = prior.find((c) => c.source === p.prior.source && c.quote === p.prior.quote);
     if (old) await sql`update claim_states set state = 'disputed' where claim_id = ${old.claim_id} and state = 'active'`;
+    // Contradiction inside this same message: the earlier line is the disputed one.
+    if (p.prior.source === `S${ev.seq}`) {
+      const own = extracted.claims.find((c) => c.quote === p.prior.quote);
+      if (own) await sql`update claim_states set state = 'disputed' where claim_id = ${`${ev.id}:${own.n}`} and state = 'active'`;
+    }
   }
 
   await rebuildDetails(userId, oppId);

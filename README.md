@@ -11,7 +11,8 @@ The hackathon cut of the specification below is implemented and deployed. It cov
 | **Zentos-style custodial wallet per Google user**: Ed25519 key minted on consent, AES-256-GCM in Postgres, same Google account = same Sui address; the wallet owns the user's **own MemWal account** (sponsored `create_account` + `add_delegate_key`, user pays 0 SUI); export endpoint as the self-custody escape hatch |
 | Google OIDC (server-verified ID token), signed HttpOnly session, CSRF header + origin check | Separate durable worker with leases/fencing (archive polling runs in `waitUntil`) |
 | AES-256-GCM encrypted content columns in Postgres (Neon); HMAC-derived MemWal namespaces | Owner-authorized remote deletion tool (forget excludes immediately; Walrus removal pending) |
-| DeepSeek extraction with exact-substring quote validation; Jev `choice` per claim pair | Retention sweeps, backups, preference confirmation in general memory |
+| DeepSeek extraction with exact-substring quote validation; Jev `choice` per claim pair |
+| **Screenshots**: paste, drop or attach a WhatsApp/Telegram/email screenshot; DeepSeek V4.1 Flash transcribes it verbatim, the user reviews and edits the text, then it runs the same pipeline. Claims inside one message are also compared, so "no fee" followed by "pay the $45 fee" in one screenshot is caught | Retention sweeps, backups, preference confirmation in general memory |
 | MemWal Mainnet archive + recall, recalled events validated against the opportunity | Verification-report UI beyond corrections |
 | Cited assessment (changes, unknown, next check), conflicting terms kept visible | |
 

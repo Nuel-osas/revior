@@ -6,6 +6,7 @@ import { cfg } from "../lib/config.js";
 import { open, seal } from "../lib/crypto.js";
 import { sql } from "../lib/db.js";
 import { loadOpportunity, rebuildDetails, submitCorrection, submitMessage } from "../lib/pipeline.js";
+import { transcribeImage } from "../lib/providers.js";
 import { exportWallet, provisionWallet, publicView, walletFor } from "../lib/wallet.js";
 
 export const config = { maxDuration: 300 };
@@ -79,7 +80,7 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
       timeline: events.map((e) => {
         const bd = open<any>(e.body_ct);
         return { id: e.id, source_id: `S${e.seq}`, kind: e.kind, recorded_at: e.recorded_at, archive_status: e.archive_status, blob_id: e.blob_id,
-                 text: bd.source.text, claims: bd.claims.map((c: any) => ({ ...c, claim_id: `${e.id}:${c.n}`, state: states.get(`${e.id}:${c.n}`) ?? "active" })),
+                 text: bd.source.text, origin: bd.source.origin, platform: bd.source.platform ?? null, claims: bd.claims.map((c: any) => ({ ...c, claim_id: `${e.id}:${c.n}`, state: states.get(`${e.id}:${c.n}`) ?? "active" })),
                  assessment: e.assessment_ct ? open(e.assessment_ct) : null };
       }),
     });
@@ -94,7 +95,17 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
     if (cp(text) > cfg.maxSource) throw Object.assign(new Error(`too long: keep it under ${cfg.maxSource} characters`), { status: 400 });
     const [{ n }] = await sql`select count(*) as n from memory_events where user_id = ${userId} and recorded_at > now() - interval '1 day'`;
     if (Number(n) >= cfg.dailyLimit) throw Object.assign(new Error("daily limit reached, try again tomorrow"), { status: 429 });
-    return res.json(await submitMessage(userId, o.id, text, String(b.idem ?? randomUUID()), open(o.label_ct)));
+    const origin = b.origin === "screenshot" ? "screenshot" : "user_paste";
+    return res.json(await submitMessage(userId, o.id, text, String(b.idem ?? randomUUID()), open(o.label_ct), origin, origin === "screenshot" ? String(b.platform ?? "other").slice(0, 20) : undefined));
+  }
+  if (path === "transcribe" && m === "POST") {
+    await loadOpportunity(userId, String(b.id));
+    const img = String(b.image ?? "");
+    if (!/^data:image\/(png|jpe?g|webp);base64,/.test(img)) throw Object.assign(new Error("send a PNG, JPEG or WebP screenshot"), { status: 400 });
+    if (img.length > 3_500_000) throw Object.assign(new Error("screenshot too large: try cropping it"), { status: 400 });
+    const [{ n }] = await sql`select count(*) as n from memory_events where user_id = ${userId} and recorded_at > now() - interval '1 day'`;
+    if (Number(n) >= cfg.dailyLimit) throw Object.assign(new Error("daily limit reached, try again tomorrow"), { status: 429 });
+    return res.json(await transcribeImage(img));
   }
   if (path === "correct" && m === "POST") {
     const o = await loadOpportunity(userId, String(b.id));

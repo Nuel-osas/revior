@@ -418,6 +418,12 @@
   /* light UI surfaces inside the dark landing keep dark ink */
   .lp-app, .lp-card, .lp-msg, .stat-card, .tl, .lst div, .txs, .gcard .ui, .receipt, .phone .scr, .demo-in { color: var(--w-black); }
   .lp-app .lp-chat .hd, .lp-list h5 { color: var(--w-black); }
+  .shot { display: flex; align-items: center; gap: 12px; padding: 8px 8px 10px; border-bottom: 1px dashed var(--line2); margin-bottom: 6px; font-size: 13.5px; color: var(--ink2); }
+  .shot img { width: 54px; height: 54px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); flex: none; }
+  .shot span { flex: 1; }
+  .shot[hidden] { display: none; }
+  .composer .box.drag { outline: 2px dashed var(--now); outline-offset: 3px; }
+  button.attach { display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -747,11 +753,12 @@ function renderLook(e) {
   const used = new Set();
   const isFirst = !a.recall?.prior_events;
   const changes = (a.changes || []).map((c) => thenNow(c, a, used)).join("");
-  const base = isFirst ? `<div class="base">${(e.claims || []).slice(0, 8).map((c) => `<span>${esc(c.statement)}</span>`).join("")}</div>` : "";
+  const inside = (a.changes || []).some((c) => c.prior === c.current);
+  const base = isFirst && !changes ? `<div class="base">${(e.claims || []).slice(0, 8).map((c) => `<span>${esc(c.statement)}</span>`).join("")}</div>` : "";
   const notes = changes ? "" : (a.notes || []).map((n) => `<p style="margin:8px 0 0">${esc(n.text)} ${(n.sources || []).map((s) => `<span class="src" data-src="${esc(s)}">${esc(s)}</span>`).join(" ")}</p>`).join("");
   const jev = (a.jev || []).map((j) => `<div class="jrow">${esc(j.pair.prior.source)} → ${esc(j.pair.current.source)} · ${esc(j.pair.topic)} · <b>${esc(j.choice)}</b> ${(j.probabilities[j.choice] ?? 0).toFixed(2)}<br/>"${esc(j.pair.prior.quote)}" vs "${esc(j.pair.current.quote)}"</div>`).join("");
   return `<div class="look">
-    <div class="kicker"><span class="eye">Second look</span><span class="tag">${isFirst ? "baseline saved" : `${a.recall?.recalled_events ?? 0} earlier message${a.recall?.recalled_events === 1 ? "" : "s"} recalled from Walrus`}</span></div>
+    <div class="kicker"><span class="eye">Second look</span><span class="tag">${isFirst ? (inside ? "change found inside this message" : "baseline saved") : `${a.recall?.recalled_events ?? 0} earlier message${a.recall?.recalled_events === 1 ? "" : "s"} recalled from Walrus`}</span></div>
     <h4>${esc(a.headline)}</h4>
     ${base}${changes}${isFirst ? "" : notes}
     ${a.unknown ? `<div class="unknown"><span class="tag">Still unknown</span><br/>${esc(a.unknown)}</div>` : ""}
@@ -794,15 +801,21 @@ function paintOffer(keepScroll) {
               <div class="rail"><span class="sid">${esc(e.source_id)}</span></div>
               <div>
                 <div class="theirs">${esc(e.text)}</div>
-                <div class="meta"><span>${when(e.recorded_at)}</span>${saved(e)}</div>
+                <div class="meta"><span>${when(e.recorded_at)}</span>${e.origin === "screenshot" ? `<span>from ${esc(e.platform && e.platform !== "other" ? e.platform : "a")} screenshot</span>` : ""}${saved(e)}</div>
                 ${renderLook(e)}
               </div>
             </div>`).join("") : `<div class="empty"><span class="serif">Paste the first message.</span>Copy what they sent you, exactly as written. Then come back and paste each new message as the conversation goes on.</div>`}
         </div>
         <div class="composer">${closed ? `<div class="empty small">This offer is closed. Reopen it to add messages.</div>` : `
-          <div class="box">
-            <textarea id="msg" placeholder="${msgs.length ? "Paste their latest message…" : "Paste the first message they sent you…"}"></textarea>
-            <div class="row"><span class="small muted">Revoir compares it with everything earlier in this offer. Remove codes, passwords and ID numbers.</span><button id="send">${msgs.length ? "Take a second look" : "Save as baseline"}</button></div>
+          <div class="box" id="box">
+            <div id="shot" class="shot" hidden></div>
+            <textarea id="msg" placeholder="${msgs.length ? "Paste their latest message, or drop a screenshot…" : "Paste the first message they sent you, or drop a screenshot…"}"></textarea>
+            <div class="row">
+              <button class="ghost attach" id="attach" title="Add a screenshot"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Screenshot</button>
+              <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden />
+              <span class="small muted">Paste text or a screenshot (WhatsApp, Telegram, email). Remove codes, passwords and ID numbers.</span>
+              <button id="send">${msgs.length ? "Take a second look" : "Save as baseline"}</button>
+            </div>
           </div>`}
         </div>
       </div>
@@ -815,7 +828,17 @@ function paintOffer(keepScroll) {
   $("#backBtn").onclick = () => (location.hash = "#/");
   $("#stBtn").onclick = async () => { await api("status", { id: o.id, status: closed ? "active" : "closed" }); renderOffer(o.id); };
   $("#fgBtn").onclick = forgetOffer;
-  if (!closed) { $("#send").onclick = send; $("#msg").onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }; }
+  if (!closed) {
+    $("#send").onclick = send;
+    $("#msg").onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); };
+    $("#attach").onclick = () => $("#file").click();
+    $("#file").onchange = (e) => e.target.files[0] && readShot(e.target.files[0]);
+    $("#msg").addEventListener("paste", (e) => { const f = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith("image/")); if (f) { e.preventDefault(); readShot(f); } });
+    const box = $("#box");
+    box.addEventListener("dragover", (e) => { e.preventDefault(); box.classList.add("drag"); });
+    box.addEventListener("dragleave", () => box.classList.remove("drag"));
+    box.addEventListener("drop", (e) => { e.preventDefault(); box.classList.remove("drag"); const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith("image/")); if (f) readShot(f); });
+  }
   if (keepScroll) window.scrollTo(0, y); else if (msgs.length) window.scrollTo(0, document.body.scrollHeight);
 }
 
@@ -844,6 +867,44 @@ function paintDeal() {
   $$("#deal [data-fix]").forEach((b) => (b.onclick = () => correct(b.dataset.fix)));
 }
 
+// Screenshot -> downscaled JPEG in the browser -> DeepSeek transcribes it -> you review the text before sending.
+let shot = null; // { origin: "screenshot", platform }
+function downscale(file, max = 1600) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL("image/jpeg", 0.85));
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => reject(new Error("couldn't read that image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+async function readShot(file) {
+  const el = $("#shot");
+  try {
+    const url = await downscale(file);
+    el.hidden = false;
+    el.innerHTML = `<img src="${url}" alt="" /><span><span class="spin"></span> Reading the screenshot…</span>`;
+    const r = await api("transcribe", { id: current.id, image: url });
+    if (!r.has_text || !r.transcript) { el.innerHTML = `<img src="${url}" alt="" /><span>No message text found in that image.</span><button class="text" id="shotX">remove</button>`; $("#shotX").onclick = clearShot; return; }
+    const ta = $("#msg");
+    ta.value = (ta.value.trim() ? ta.value.trim() + "\n\n" : "") + r.transcript;
+    ta.style.height = Math.min(360, ta.scrollHeight + 4) + "px";
+    shot = { origin: "screenshot", platform: r.platform };
+    el.innerHTML = `<img src="${url}" alt="" /><span><b>Transcribed from ${esc(r.platform === "other" ? "screenshot" : r.platform)}.</b> Check the text below matches, and remove any codes or ID numbers, then send.</span><button class="text" id="shotX">remove</button>`;
+    $("#shotX").onclick = () => { $("#msg").value = ""; clearShot(); };
+    ta.focus();
+  } catch (e) {
+    el.hidden = false; el.innerHTML = `<span style="color:#b42318">${esc(e.message)}</span><button class="text" id="shotX">dismiss</button>`; $("#shotX").onclick = clearShot;
+  }
+}
+function clearShot() { shot = null; const el = $("#shot"); if (el) { el.hidden = true; el.innerHTML = ""; } const f = $("#file"); if (f) f.value = ""; }
+
 async function send() {
   const text = $("#msg").value.trim(); if (!text) return;
   const btn = $("#send"); btn.disabled = true;
@@ -864,7 +925,8 @@ async function send() {
   const steps = () => $$("#working li").forEach((li, i) => { li.className = i < k ? "done" : i === k ? "on" : ""; li.firstElementChild.outerHTML = i < k ? `<span class="b">✓</span>` : i === k ? `<span class="spin"></span>` : `<span class="b">·</span>`; });
   const t = setInterval(() => { if (k < 3) { k++; steps(); } }, n ? 2600 : 2200);
   try {
-    await api("message", { id: current.id, text, idem: crypto.randomUUID() });
+    await api("message", { id: current.id, text, idem: crypto.randomUUID(), ...(shot || {}) });
+    clearShot();
     clearInterval(t);
     current = await api(`opportunity?id=${encodeURIComponent(current.id)}`);
     paintOffer();

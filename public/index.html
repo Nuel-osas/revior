@@ -7,7 +7,7 @@
 <meta name="description" content="Revoir remembers what a recruiter or collaborator told you, and shows you exactly what changed, with sources, before your next step." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500&display=swap" rel="stylesheet" />
 <style>
   :root {
     --paper: #f7f4ee; --card: #fffdf9; --ink: #16141c; --ink2: #3b3846; --muted: #7a7585; --line: #e6e0d4; --line2: #d9d1c2;
@@ -344,6 +344,79 @@
     .cta2 .in { grid-template-columns: 1fr; padding: 48px 0 0 28px; }
     .foot2 { grid-template-columns: 1fr 1fr; }
   }
+  /* ================= Walrus palette (walrus.xyz) ================= */
+  :root {
+    --w-black: #000000; --w-ink: #14181b; --w-surface: #1d2227; --w-cream: #faf8f5; --w-lav: #cab1ff;
+    --w-blue: #3395ee; --w-violet: #5e0eff; --w-indigo: #1a1437; --w-grey: #8e9294; --w-grey2: #b1b4b6;
+    --w-grad: linear-gradient(90deg, #3395ee 0%, #5e0eff 90%);
+    --sans: "Google Sans Flex", "Google Sans", -apple-system, "Segoe UI", sans-serif;
+    --serif: var(--sans);
+    --mono: "Google Sans Code", ui-monospace, Menlo, monospace;
+    /* app (light) */
+    --paper: #faf8f5; --card: #ffffff; --ink: #000000; --ink2: #2b3035; --muted: #6f7477; --line: #ebe7e0; --line2: #ddd8cf;
+    --then: #8e9294; --now: #5e0eff; --now-soft: #f2ecff; --now-line: #cab1ff;
+    --check: #1f6fd1; --check-soft: #e8f2fd;
+  }
+  .logo i { color: var(--w-violet); }
+  .tn .then .q { text-decoration-color: rgba(94,14,255,.45); }
+  .term .was s { text-decoration-color: rgba(94,14,255,.5); }
+  .meter span i { background: var(--w-grad); }
+  .badge.now { background: var(--now-soft); color: var(--w-violet); }
+  .next { color: #0f3f7a; }
+  button { background: var(--w-black); color: var(--w-cream); }
+  .chip .dot { background: var(--w-blue); }
+  .rail .sid { background: var(--w-black); }
+
+  /* landing (dark, like walrus.xyz) */
+  .lp { background: var(--w-black); color: var(--w-cream); }
+  .lp-brand, .foot2 a.lp-brand { color: var(--w-cream); }
+  .lp-mark { background: var(--w-grad); }
+  .lp-links a { color: var(--w-grey2); }
+  .lp-links a:hover { color: var(--w-lav); }
+  .pill { background: transparent; color: var(--w-cream); border: 1px solid rgba(250,248,245,.55); }
+  .pill.dark { background: var(--w-cream); color: var(--w-black); border-color: var(--w-cream); }
+  .pill.dark .arr { background: var(--w-black); color: var(--w-cream); }
+  .lp-hero .bg { background: linear-gradient(180deg, var(--w-indigo) 0%, #2b1a86 34%, #5e0eff 66%, #000 100%); }
+  .badge-pill { background: rgba(250,248,245,.1); color: var(--w-cream); border: 1px solid rgba(250,248,245,.22); box-shadow: none; backdrop-filter: blur(6px); }
+  .badge-pill .dots span { border-color: var(--w-indigo); }
+  .lp h1 { color: var(--w-cream); }
+  .lp h1 .gem { background: var(--w-grad); }
+  .lp .sub { color: rgba(250,248,245,.82); }
+  .lp-mock { background: rgba(202,177,255,.18); box-shadow: 0 40px 90px -30px rgba(94,14,255,.55); }
+  .lp-rail i.on, .lp-bot .av { background: var(--w-violet); }
+  .lp-msg { background: #efe8ff; }
+  .lp-card .b { background: var(--now-soft); color: var(--w-violet); }
+  .lp-trust p, .lp-sec .lede { color: var(--w-grey2); }
+  .lp-logos { color: var(--w-cream); }
+  .lp-sec h2, .two-tone { color: var(--w-cream); }
+  .two-tone span { color: var(--w-grey); }
+  .tri .pink { background: var(--w-lav); }
+  .tri .lav { background: var(--w-grad); }
+  .tri .mint { background: var(--w-surface); }
+  .tl .chg { color: var(--w-violet); }
+  .gcard, .wide { background: var(--w-ink); }
+  .gcard h3, .wide h3 { color: var(--w-cream); }
+  .gcard p, .wide p { color: var(--w-grey2); }
+  .chat-mini .r { background: var(--w-lav); }
+  .receipt { background: var(--w-lav); }
+  .receipt .k { color: #4a3a7a; }
+  .receipt-wrap .ghost-card { border-color: rgba(202,177,255,.6); background: var(--w-surface); }
+  .wide .panel2 { background: var(--w-lav); }
+  .checks { color: var(--w-black); }
+  .txs .dot { background: var(--w-violet); }
+  .faq h2 { color: var(--w-cream); }
+  .faq summary { color: var(--w-cream); }
+  .faq details[open] { background: var(--w-ink); }
+  .faq details p { color: var(--w-grey2); }
+  .cta2 .in { background: var(--w-grad); }
+  .cta2 .pill { background: var(--w-cream) !important; color: var(--w-black); border-color: var(--w-cream); }
+  .foot2 p, .foot2 h6, .foot2 .legal { color: var(--w-grey); }
+  .foot2 a { color: var(--w-cream); }
+  .foot2 .legal { border-top-color: var(--w-surface); }
+  .lp-err { background: var(--w-cream); }
+  /* light UI surfaces inside the dark landing keep dark ink */
+  .lp-app, .lp-card, .lp-msg, .stat-card, .tl, .lst div, .txs, .gcard .ui, .receipt, .phone .scr, .demo-in { color: var(--w-black); }
+  .lp-app .lp-chat .hd, .lp-list h5 { color: var(--w-black); }
 </style>
 </head>
 <body>
@@ -413,7 +486,7 @@ function renderLanding() {
     <section class="lp-hero"><div class="bg">
       ${sparks}
       ${err ? `<div class="lp-err">${esc(err)}</div><br/>` : ""}
-      <span class="badge-pill"><span class="dots"><span style="background:#4f46e5">W</span><span style="background:#0ea5e9">S</span><span style="background:#c2410c">J</span></span>Built on Walrus Memory · Sui mainnet</span>
+      <span class="badge-pill"><span class="dots"><span style="background:#5e0eff">W</span><span style="background:#3395ee">S</span><span style="background:#14181b">J</span></span>Built on Walrus Memory · Sui mainnet</span>
       <h1>See every offer <span class="gem">${EYE}</span> again, before you say yes.</h1>
       <p class="sub">Paste each message from a recruiter or collaborator as it arrives. Revoir remembers what they told you and shows exactly what changed, with sources, and what to check next.</p>
       <a class="pill dark" href="/auth/google/start">Continue with Google ${ARROW}</a>
@@ -454,7 +527,7 @@ function renderLanding() {
     <section class="lp-trust">
       <p>Powered by an open, verifiable stack</p>
       <div class="lp-logos">
-        <span><b style="background:#4f46e5"></b>Walrus</span><span><b style="background:#38bdf8;border-radius:50% 50% 50% 0"></b>Sui</span><span><b style="background:#2563eb;border-radius:50%"></b>DeepSeek</span><span><b style="background:#14121c;transform:rotate(45deg)"></b>Jev</span><span><b style="background:#0f766e"></b>Seal</span>
+        <span><b style="background:#5e0eff"></b>Walrus</span><span><b style="background:#3395ee;border-radius:50% 50% 50% 0"></b>Sui</span><span><b style="background:#4d6bfe;border-radius:50%"></b>DeepSeek</span><span><b style="background:#faf8f5;transform:rotate(45deg)"></b>Jev</span><span><b style="background:#cab1ff"></b>Seal</span>
       </div>
     </section>
 

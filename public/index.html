@@ -3,357 +3,557 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Revoir</title>
-<meta name="description" content="Revoir remembers how a job or collaboration offer changes across messages and shows what to verify before your next step." />
+<title>Revoir: see every offer again</title>
+<meta name="description" content="Revoir remembers what a recruiter or collaborator told you, and shows you exactly what changed, with sources, before your next step." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #f5f6f8; --panel: #fff; --ink: #111827; --muted: #6b7280; --line: #e5e7eb;
-    --accent: #4338ca; --accent-soft: #eef2ff; --warn: #b45309; --warn-soft: #fef3c7;
-    --bad: #b91c1c; --bad-soft: #fee2e2; --good: #047857; --good-soft: #d1fae5;
-    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --paper: #f7f4ee; --card: #fffdf9; --ink: #16141c; --ink2: #3b3846; --muted: #7a7585; --line: #e6e0d4; --line2: #d9d1c2;
+    --then: #8d8799; --now: #c2410c; --now-soft: #fff1e8; --now-line: #f4c9ad;
+    --check: #0f766e; --check-soft: #e3f4f1; --warn: #a16207; --warn-soft: #fdf3d8;
+    --ok: #15803d; --ok-soft: #e4f5e9;
+    --serif: "Instrument Serif", Georgia, serif; --sans: Inter, -apple-system, "Segoe UI", sans-serif; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
   }
   * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-  button { font: 600 14px Inter, sans-serif; border: 0; border-radius: 8px; padding: 8px 13px; background: var(--accent); color: #fff; cursor: pointer; }
-  button.ghost { background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
-  button.link { background: none; color: var(--accent); padding: 2px 4px; font-weight: 500; }
-  button:disabled { opacity: .55; cursor: wait; }
-  input, textarea { font: inherit; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; background: #fff; color: var(--ink); }
-  textarea { resize: vertical; min-height: 64px; }
-  input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
-  a { color: var(--accent); }
-  .center { max-width: 520px; margin: 10vh auto; padding: 0 16px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 26px; }
-  .brand { font-weight: 700; font-size: 20px; letter-spacing: -.01em; }
-  .brand span { color: var(--accent); }
-  .lead { color: var(--muted); margin: 6px 0 20px; }
-  .gbtn { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: var(--ink); border: 1px solid var(--line); padding: 11px 16px; }
-  .fine { font-size: 12.5px; color: var(--muted); }
-  /* app shell */
-  .app { display: grid; grid-template-columns: 260px minmax(0, 1fr) 340px; height: 100vh; }
-  aside, .right { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; }
-  .right { border-right: 0; border-left: 1px solid var(--line); }
-  aside header, .right header { padding: 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .opp { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
-  .opp:hover { background: #fafafa; }
-  .opp.sel { background: var(--accent-soft); }
-  .opp b { display: block; font-weight: 600; }
-  .opp small { color: var(--muted); }
-  .pill { display: inline-block; font: 600 11px var(--mono); padding: 2px 7px; border-radius: 999px; background: #f3f4f6; color: var(--muted); }
-  .pill.bad { background: var(--bad-soft); color: var(--bad); }
-  .pill.warn { background: var(--warn-soft); color: var(--warn); }
-  .pill.good { background: var(--good-soft); color: var(--good); }
-  main { display: flex; flex-direction: column; min-height: 0; }
-  main > header { padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  main > header h2 { margin: 0; font-size: 17px; flex: 1; }
-  #thread { flex: 1; overflow-y: auto; padding: 18px 20px; }
-  .src { margin: 0 0 6px auto; max-width: 78%; background: var(--accent); color: #fff; padding: 10px 13px; border-radius: 14px 14px 4px 14px; white-space: pre-wrap; word-wrap: break-word; }
-  .srcmeta { text-align: right; font: 11.5px var(--mono); color: var(--muted); margin-bottom: 14px; }
-  .ans { max-width: 88%; background: var(--panel); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 14px 16px; margin-bottom: 22px; }
-  .ans h4 { margin: 0 0 8px; font-size: 15px; }
-  .change { border-left: 3px solid var(--bad); background: #fffafa; padding: 8px 10px; border-radius: 0 8px 8px 0; margin: 8px 0; }
-  .change.change-kind { border-color: var(--warn); background: #fffdf6; }
-  .lbl { font: 600 11px var(--mono); text-transform: uppercase; color: var(--muted); letter-spacing: .03em; }
-  .q { font-style: italic; color: #374151; }
-  .chip { font: 600 11px var(--mono); color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 6px; cursor: pointer; }
-  .next { margin-top: 10px; background: var(--good-soft); color: #064e3b; padding: 9px 11px; border-radius: 8px; }
-  .unknown { margin-top: 8px; color: #374151; }
-  details.trace { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
-  details.trace summary { cursor: pointer; }
-  .jev { font-family: var(--mono); font-size: 12px; margin: 3px 0; }
-  .bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--accent); vertical-align: middle; margin-right: 6px; }
-  .composer { padding: 12px 20px 16px; border-top: 1px solid var(--line); background: var(--panel); }
-  .composer .row { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
-  .composer .row .fine { flex: 1; }
-  .empty { color: var(--muted); padding: 30px 10px; text-align: center; }
-  .topic { padding: 12px 16px; border-bottom: 1px solid var(--line); }
-  .topic .t { font: 600 12px var(--mono); text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
-  .topic .cur { margin-top: 4px; }
-  .topic .hist { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
-  .topic .hist s { color: #9ca3af; }
-  .save { font: 11.5px var(--mono); }
-  .modal { position: fixed; inset: 0; background: rgba(17,24,39,.45); display: none; align-items: flex-start; justify-content: center; padding-top: 10vh; z-index: 10; }
-  .modal.open { display: flex; }
-  .modal .card { width: min(560px, 92vw); max-height: 75vh; overflow-y: auto; }
-  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 9px 14px; border-radius: 8px; font-size: 13.5px; display: none; z-index: 20; }
-  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: s .8s linear infinite; vertical-align: -1px; }
+  html { -webkit-font-smoothing: antialiased; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--sans); }
+  a { color: inherit; }
+  button { font: 600 14px var(--sans); border: 0; border-radius: 999px; padding: 10px 18px; background: var(--ink); color: var(--paper); cursor: pointer; transition: transform .12s ease, opacity .12s; }
+  button:hover { transform: translateY(-1px); }
+  button:active { transform: none; }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line2); }
+  button.text { background: none; color: var(--ink2); padding: 4px 6px; font-weight: 500; text-decoration: underline; text-decoration-color: var(--line2); text-underline-offset: 3px; }
+  button.danger { background: #b42318; }
+  button:disabled { opacity: .5; cursor: wait; transform: none; }
+  textarea, input { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line2); border-radius: 12px; padding: 12px 14px; width: 100%; }
+  textarea:focus, input:focus { outline: 2px solid var(--ink); outline-offset: 1px; border-color: transparent; }
+  .serif { font-family: var(--serif); font-weight: 400; letter-spacing: -.01em; }
+  .mono { font-family: var(--mono); }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .tag { font: 600 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .src { display: inline-flex; align-items: center; font: 600 11px var(--mono); padding: 1px 7px; border-radius: 6px; background: #efe9de; color: var(--ink2); cursor: pointer; border: 1px solid var(--line); vertical-align: 1px; }
+  .src:hover { background: var(--ink); color: var(--paper); }
+  .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--line2); border-top-color: var(--ink); border-radius: 50%; animation: s .8s linear infinite; vertical-align: -2px; }
   @keyframes s { to { transform: rotate(360deg); } }
-  @media (max-width: 1000px) { .app { grid-template-columns: 1fr; height: auto; } aside, .right { border: 0; } #thread { max-height: 60vh; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .rise { animation: rise .45s ease both; }
+
+  .top { position: sticky; top: 0; z-index: 5; background: rgba(247,244,238,.88); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .top .in { max-width: 1240px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 14px; }
+  .logo { font: 400 26px/1 var(--serif); text-decoration: none; display: inline-flex; align-items: baseline; gap: 2px; }
+  .logo i { font-style: italic; color: var(--now); }
+  .top .sp { flex: 1; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font: 500 12.5px var(--mono); padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line2); background: var(--card); text-decoration: none; cursor: pointer; }
+  .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--line); object-fit: cover; }
+
+  .land { max-width: 1120px; margin: 0 auto; padding: 56px 24px 80px; display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; }
+  .land h1 { font: 400 clamp(46px, 6vw, 76px)/1.02 var(--serif); margin: 0 0 18px; letter-spacing: -.02em; }
+  .land h1 em { color: var(--now); }
+  .land p.lead { font-size: 18px; color: var(--ink2); max-width: 520px; margin: 0 0 28px; }
+  .gbtn { display: inline-flex; align-items: center; gap: 12px; padding: 13px 22px; font-size: 15px; }
+  .gbtn svg { background: #fff; border-radius: 50%; padding: 3px; }
+  .promise { list-style: none; padding: 0; margin: 34px 0 0; display: grid; gap: 10px; }
+  .promise li { display: flex; gap: 12px; color: var(--ink2); }
+  .promise b { font: 600 12px var(--mono); color: var(--muted); min-width: 22px; padding-top: 2px; }
+  .demo { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 22px; box-shadow: 0 30px 60px -30px rgba(22,20,28,.25); }
+  .bubble { border-radius: 16px; padding: 12px 15px; margin: 8px 0; max-width: 92%; font-size: 14.5px; }
+  .bubble.them { background: #f1ece2; }
+  .bubble small { display: block; font: 500 11px var(--mono); color: var(--muted); margin-bottom: 3px; }
+
+  .tn { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--now-line); border-radius: 14px; overflow: hidden; margin: 10px 0; background: var(--card); }
+  .tn > div { padding: 12px 14px; }
+  .tn .then { border-right: 1px dashed var(--now-line); }
+  .tn .then .q { color: var(--then); text-decoration: line-through; text-decoration-color: rgba(194,65,12,.45); }
+  .tn .now { background: var(--now-soft); }
+  .tn .now .q { color: var(--ink); }
+  .tn .q { font: 400 17px/1.35 var(--serif); margin: 4px 0 6px; }
+  .tn .cap { grid-column: 1 / -1; padding: 9px 14px; border-top: 1px solid var(--now-line); font-size: 13.5px; color: var(--ink2); display: flex; gap: 10px; align-items: center; justify-content: space-between; background: var(--card); }
+  .tn.soft { border-color: var(--line2); }
+  .tn.soft .now { background: var(--warn-soft); }
+  .tn.soft .then .q { text-decoration: none; }
+  .meter { display: inline-flex; align-items: center; gap: 6px; font: 600 11px var(--mono); color: var(--muted); white-space: nowrap; }
+  .meter span { display: inline-block; width: 46px; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .meter span i { display: block; height: 100%; background: var(--now); }
+  .next { display: flex; gap: 12px; background: var(--check-soft); border-radius: 12px; padding: 12px 14px; margin-top: 10px; color: #0b4f49; }
+  .next .ic { font: 600 18px/1 var(--serif); color: var(--check); }
+
+  .narrow { max-width: 560px; margin: 8vh auto; padding: 0 20px; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 30px; }
+  .panel h2 { font: 400 36px/1.1 var(--serif); margin: 0 0 12px; }
+  .steps { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 10px; }
+  .steps li { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+  .steps li.on { color: var(--ink); }
+  .steps li.done { color: var(--ok); }
+  .steps .b { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid currentColor; display: inline-flex; align-items: center; justify-content: center; font: 600 11px var(--mono); }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 34px 24px 80px; }
+  .hello { display: flex; align-items: end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 26px; }
+  .hello h1 { font: 400 46px/1.05 var(--serif); margin: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+  .ocard { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; cursor: pointer; transition: border-color .15s, transform .15s, box-shadow .15s; display: flex; flex-direction: column; gap: 10px; min-height: 168px; }
+  .ocard:hover { border-color: var(--ink); transform: translateY(-2px); box-shadow: 0 18px 30px -24px rgba(22,20,28,.4); }
+  .ocard h3 { font: 400 25px/1.15 var(--serif); margin: 0; }
+  .ocard .st { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .badge { font: 600 11px var(--mono); padding: 3px 8px; border-radius: 999px; background: #efe9de; color: var(--ink2); }
+  .badge.now { background: var(--now-soft); color: var(--now); }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .newcard { border-style: dashed; align-items: center; justify-content: center; text-align: center; color: var(--ink2); }
+  .newcard .plus { font: 400 44px/1 var(--serif); }
+
+  .ohead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .ohead h1 { font: 400 40px/1.05 var(--serif); margin: 0; flex: 1; min-width: 240px; }
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 26px; align-items: start; }
+  .thread { display: grid; gap: 14px; }
+  .msg { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; }
+  .rail { position: relative; display: flex; flex-direction: column; align-items: center; }
+  .rail .sid { font: 600 12px var(--mono); background: var(--ink); color: var(--paper); border-radius: 8px; padding: 4px 8px; }
+  .rail::after { content: ""; flex: 1; width: 1px; background: var(--line2); margin-top: 6px; }
+  .msg:last-child .rail::after { display: none; }
+  .theirs { background: #f1ece2; border-radius: 4px 16px 16px 16px; padding: 13px 16px; white-space: pre-wrap; word-wrap: break-word; font-size: 14.5px; }
+  .meta { font: 500 11.5px var(--mono); color: var(--muted); margin: 6px 2px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .meta a { color: var(--check); }
+  .look { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin-top: 12px; }
+  .look .kicker { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .look .kicker .eye { font: italic 400 18px/1 var(--serif); color: var(--now); }
+  .look h4 { font: 400 22px/1.25 var(--serif); margin: 0 0 6px; }
+  .look .base { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .look .base span { font-size: 13px; background: #f3efe7; border-radius: 999px; padding: 4px 10px; }
+  .unknown { margin-top: 10px; font-size: 14px; color: var(--ink2); }
+  details.trace { margin-top: 12px; font-size: 12.5px; color: var(--muted); }
+  details.trace summary { cursor: pointer; list-style: none; }
+  details.trace summary::before { content: "+ "; }
+  details.trace[open] summary::before { content: "− "; }
+  .jrow { font: 12px/1.5 var(--mono); padding: 6px 0; border-top: 1px dashed var(--line); }
+  .composer { position: sticky; bottom: 0; padding: 16px 0 20px; background: linear-gradient(to top, var(--paper) 72%, transparent); }
+  .composer .box { background: var(--card); border: 1px solid var(--line2); border-radius: 18px; padding: 10px; box-shadow: 0 10px 30px -20px rgba(22,20,28,.35); }
+  .composer textarea { border: 0; min-height: 70px; resize: vertical; background: transparent; }
+  .composer textarea:focus { outline: none; }
+  .composer .row { display: flex; align-items: center; gap: 10px; padding: 4px 6px 2px; }
+  .composer .row .small { flex: 1; }
+  .working { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .working li { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 14px; }
+  .working li.on { color: var(--ink); }
+  .working li.done { color: var(--ok); }
+  .working .b { width: 13px; text-align: center; }
+
+  .deal { position: sticky; top: 76px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+  .deal header { padding: 18px 18px 12px; border-bottom: 1px solid var(--line); }
+  .deal header h3 { font: 400 24px/1.1 var(--serif); margin: 0; }
+  .term { padding: 13px 18px; border-bottom: 1px solid var(--line); }
+  .term:last-child { border-bottom: 0; }
+  .term .h { display: flex; justify-content: space-between; align-items: center; }
+  .term .cur { margin-top: 3px; font-size: 14.5px; }
+  .term .was { margin-top: 4px; font-size: 13px; color: var(--then); }
+  .term .was s { text-decoration-color: rgba(194,65,12,.5); }
+  .term .act { font: 600 10.5px var(--mono); color: var(--warn); background: var(--warn-soft); padding: 1px 6px; border-radius: 5px; margin-left: 4px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 16px; }
+  .empty .serif { font-size: 28px; color: var(--ink); display: block; margin-bottom: 6px; }
+
+  .modal { position: fixed; inset: 0; background: rgba(22,20,28,.42); display: none; align-items: flex-start; justify-content: center; padding: 9vh 16px 16px; z-index: 30; }
+  .modal.open { display: flex; }
+  .modal .panel { width: min(580px, 100%); max-height: 80vh; overflow-y: auto; animation: rise .25s ease both; }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font-size: 13.5px; margin: 14px 0; }
+  .kv a { font-family: var(--mono); font-size: 12.5px; color: var(--check); }
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 999px; font-size: 13.5px; display: none; z-index: 40; }
+  .flash { animation: flash 1.4s ease; }
+  @keyframes flash { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 4px var(--now-line); } }
+
+  @media (max-width: 980px) {
+    .land { grid-template-columns: 1fr; padding-top: 30px; gap: 34px; }
+    .split { grid-template-columns: 1fr; }
+    .deal { position: static; }
+    .msg { grid-template-columns: 40px minmax(0, 1fr); gap: 10px; }
+    .tn { grid-template-columns: 1fr; }
+    .tn .then { border-right: 0; border-bottom: 1px dashed var(--now-line); }
+    .top .in, .wrap { padding-left: 16px; padding-right: 16px; }
+  }
 </style>
 </head>
 <body>
 <div id="root"></div>
-<div class="modal" id="modal"><div class="card" id="modalBody"></div></div>
+<div class="modal" id="modal"><div class="panel" id="modalBody"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
 const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const day = (d) => new Date(d).toLocaleDateString([], { month: "short", day: "numeric" });
 const when = (d) => new Date(d).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-const TOPIC = { payment_or_fee: "Payments & fees", compensation: "Compensation", role_or_company: "Role & company", contact_or_identity: "Contacts", communication_channel: "Channel", onboarding_process: "Onboarding", documents_or_credentials: "Documents & credentials", schedule_or_deadline: "Deadlines", other: "Other" };
-let me = null, opps = [], current = null, poll = null;
+const short = (a) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
+const TOPIC = { payment_or_fee: "Money you'd pay", compensation: "Pay", role_or_company: "Role & company", contact_or_identity: "Who you're talking to", communication_channel: "Where it happens", onboarding_process: "Onboarding", documents_or_credentials: "Documents & access", schedule_or_deadline: "Deadlines", other: "Other" };
+const ORDER = Object.keys(TOPIC);
+let me = null, current = null, poll = null;
 
-function toast(t) { const el = $("#toast"); el.textContent = t; el.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => (el.style.display = "none"), 3500); }
+function toast(t) { const el = $("#toast"); el.textContent = t; el.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => (el.style.display = "none"), 3600); }
 async function api(path, body) {
   const r = await fetch("/api/" + path, body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json", "x-revoir": "1" }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
-  if (r.status === 401) { renderSignIn(); throw new Error("Please sign in"); }
+  if (r.status === 401) { me = null; renderLanding(); throw new Error("Please sign in"); }
   if (!r.ok) throw new Error(j.error || r.statusText);
   return j;
 }
 function modal(html) { $("#modalBody").innerHTML = html; $("#modal").classList.add("open"); }
 function closeModal() { $("#modal").classList.remove("open"); }
 $("#modal").onclick = (e) => { if (e.target.id === "modal") closeModal(); };
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
-// ---------- sign in & consent ----------
-function renderSignIn() {
+const GOOGLE = `<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>`;
+
+function topbar() {
+  const w = me?.wallet;
+  return `<div class="top"><div class="in">
+    <a class="logo" href="#/">Rev<i>oir</i></a>
+    <span class="sp"></span>
+    ${me ? `
+      <button class="text" id="memBtn">My memory</button>
+      ${w?.status === "ready" ? `<span class="chip" id="walBtn" title="Your Sui wallet owns your memory"><span class="dot"></span>${esc(short(w.address))}</span>` : `<span class="chip" id="walBtn"><span class="dot" style="background:var(--warn)"></span>set up wallet</span>`}
+      ${me.user.picture ? `<img class="avatar" src="${esc(me.user.picture)}" alt="" referrerpolicy="no-referrer" />` : ""}
+      <button class="text" id="outBtn">Sign out</button>` : `<a href="/auth/google/start"><button class="ghost">Sign in</button></a>`}
+  </div></div>`;
+}
+function bindTop() {
+  $("#memBtn") && ($("#memBtn").onclick = showMemory);
+  $("#walBtn") && ($("#walBtn").onclick = showWallet);
+  $("#outBtn") && ($("#outBtn").onclick = async () => { await api("signout", {}); location.hash = ""; location.reload(); });
+}
+
+// ---------- landing ----------
+function renderLanding() {
   const err = new URLSearchParams(location.search).get("error");
-  $("#root").innerHTML = `
-    <div class="center"><div class="card">
-      <div class="brand">Revi<span>or</span></div>
-      <p class="lead">A second look at every job or collaboration offer. Paste each new message as the conversation goes on. Revoir remembers what you were told before, and shows you what changed and what to verify next.</p>
-      ${err ? `<p class="fine" style="color:var(--bad)">${esc(err)}</p>` : ""}
-      <a href="/auth/google/start"><button class="gbtn"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button></a>
-      <p class="fine" style="margin-top:18px">Sign-in only identifies you. Revoir does not read your Gmail. It never tells you an offer is "safe" or a "scam": it shows what changed, with sources, so you can decide.</p>
-    </div></div>`;
+  $("#root").innerHTML = topbar() + `
+  <section class="land">
+    <div class="rise">
+      <div class="tag" style="margin-bottom:14px">Revoir · French for "to see again"</div>
+      <h1 class="serif">They said one thing.<br/>Now they're saying <em>another.</em></h1>
+      <p class="lead">Job and collaboration offers change across messages: a fee that "doesn't exist" appears, the portal becomes a Telegram chat, a new contact steps in. Paste each message as it arrives. Revoir remembers what you were told and shows you exactly what changed, with sources, and what to check next.</p>
+      ${err ? `<p class="small" style="color:#b42318">${esc(err)}</p>` : ""}
+      <a href="/auth/google/start"><button class="gbtn">${GOOGLE} Continue with Google</button></a>
+      <ul class="promise">
+        <li><b>01</b><span>Every claim is quoted from the message itself. Nothing is invented.</span></li>
+        <li><b>02</b><span>No "scam" labels. Just what changed, and one concrete thing to verify.</span></li>
+        <li><b>03</b><span>Your memory is encrypted on Walrus and owned by your own Sui wallet.</span></li>
+      </ul>
+    </div>
+    <div class="demo rise" style="animation-delay:.12s">
+      <div class="tag">Example · frontend contract offer</div>
+      <div class="bubble them"><small>S1 · Monday</small>The contract pays $1,500 monthly. <b>Applicants pay no fees.</b> Onboarding happens only through our careers portal.</div>
+      <div class="bubble them"><small>S2 · Thursday</small>Quick update: please send a <b>refundable $60 onboarding deposit</b> today. Our HR partner Mark will finish onboarding on <b>Telegram</b>.</div>
+      <div class="tn" style="margin-top:16px">
+        <div class="then"><div class="tag">Then · S1</div><div class="q">"Applicants pay no fees."</div></div>
+        <div class="now"><div class="tag" style="color:var(--now)">Now · S2</div><div class="q">"send a refundable $60 onboarding deposit"</div></div>
+        <div class="cap"><span>The fee condition changed.</span><span class="meter">contradiction<span><i style="width:90%"></i></span>0.90</span></div>
+      </div>
+      <div class="next"><span class="ic">→</span><div><div class="tag" style="color:var(--check)">Next check</div>Confirm the deposit through a company contact you find yourself, not one from these messages.</div></div>
+    </div>
+  </section>`;
+  bindTop();
 }
 
-function renderConsent() {
-  $("#root").innerHTML = `
-    <div class="center"><div class="card">
-      <div class="brand">Before you start</div>
-      <p class="lead">Information you choose to analyze is processed by Revoir, DeepSeek, Jev (TypeSafe) and the Walrus Memory service. Saved content is encrypted on Walrus, but these services can process the text. Revoir operates the memory account. You can inspect or correct saved information and close or forget an opportunity.</p>
-      <p class="lead"><b>Remove passwords, one-time codes, private keys and ID documents</b> before pasting a message.</p>
-      <p class="lead">Continuing creates <b>your own Sui wallet</b> and a Walrus Memory account it owns, so your memories belong to you, not to Revoir. Setup fees are sponsored. You can export the wallet at any time.</p>
-      <button id="ok">Continue</button> <button class="ghost" id="no">Sign out</button>
-    </div></div>`;
-  $("#ok").onclick = async () => {
-    $("#ok").disabled = true;
-    $("#ok").innerHTML = `<span class="spin"></span> Creating your Sui wallet and memory account…`;
-    try { await api("consent", {}); } catch (e) { toast("Wallet setup will retry on your first update: " + e.message); }
-    boot();
+// ---------- setup ----------
+function renderSetup() {
+  $("#root").innerHTML = topbar() + `
+  <div class="narrow"><div class="panel rise">
+    <div class="tag">Before your first offer</div>
+    <h2>Your memory, owned by you.</h2>
+    <p>Revoir processes the messages you paste using DeepSeek (reading and explaining), Jev by TypeSafe (comparing claims) and Walrus Memory (encrypted storage on Sui mainnet). These services can process the text you send.</p>
+    <p><b>Remove passwords, one-time codes, private keys and ID numbers</b> before pasting anything.</p>
+    <p class="muted small">Continuing creates a Sui wallet for your Google account and a Walrus Memory account that wallet owns. Setup fees are sponsored, so you pay nothing. You can export the wallet at any time.</p>
+    <ul class="steps" id="steps">
+      <li><span class="b">1</span>Create your Sui wallet</li>
+      <li><span class="b">2</span>Create your memory account on Walrus</li>
+      <li><span class="b">3</span>Give Revoir access to your memory</li>
+    </ul>
+    <div style="display:flex;gap:10px;margin-top:22px"><button id="go">Agree and set up</button><button class="ghost" id="no">Not now</button></div>
+  </div></div>`;
+  bindTop();
+  $("#no").onclick = async () => { await api("signout", {}); location.reload(); };
+  $("#go").onclick = async () => {
+    $("#go").disabled = true; $("#no").remove();
+    $("#go").innerHTML = `<span class="spin"></span> Setting up on Sui mainnet…`;
+    let k = 0;
+    const tick = () => { $$("#steps li").forEach((li, i) => (li.className = i < k ? "done" : i === k ? "on" : "")); $$("#steps .b").forEach((b, i) => (b.textContent = i < k ? "✓" : String(i + 1))); };
+    tick(); const t = setInterval(() => { if (k < 2) { k++; tick(); } }, 2600);
+    try { const r = await api("consent", {}); clearInterval(t); k = 3; tick(); me.wallet = r.wallet; me.consent = true; setTimeout(route, 700); }
+    catch (e) { clearInterval(t); toast("Wallet setup will retry on your first update: " + e.message); me.consent = true; setTimeout(route, 900); }
   };
-  $("#no").onclick = async () => { await api("signout", {}); location.href = "/"; };
 }
 
-// ---------- app ----------
-async function boot() {
-  try { me = await api("me"); } catch { return renderSignIn(); }
-  if (!me.consent) return renderConsent();
-  $("#root").innerHTML = `
-    <div class="app">
-      <aside>
-        <header><div class="brand">Revi<span>or</span></div><button id="addBtn">+ Add</button></header>
-        <div id="oppList"></div>
-        <div style="padding:14px 16px" class="fine">
-          <button class="link" id="memBtn">My memory</button> · <button class="link" id="walBtn">My wallet</button> · <button class="link" id="outBtn">Sign out</button><br/>
-          ${esc(me.user.email || me.user.name)}<br/>
-          ${me.wallet?.status === "ready" ? `<a href="https://suiscan.xyz/mainnet/account/${esc(me.wallet.address)}" target="_blank" class="pill good" style="text-decoration:none">wallet ${esc(me.wallet.address.slice(0, 6))}…${esc(me.wallet.address.slice(-4))}</a>` : `<span class="pill warn">wallet ${esc(me.wallet?.status || "not created")}</span>`}
-        </div>
-      </aside>
-      <main id="main"><div class="empty" style="margin-top:20vh">Add an opportunity to start. One per offer or conversation.</div></main>
-      <section class="right" id="right"><header><b>Current details</b></header><div class="empty">Details appear as you add messages.</div></section>
-    </div>`;
-  $("#addBtn").onclick = addOpportunity;
-  $("#memBtn").onclick = showMemory;
-  $("#walBtn").onclick = showWallet;
-  $("#outBtn").onclick = async () => { await api("signout", {}); location.href = "/"; };
-  await loadOpps();
-  if (opps[0]) openOpp(opps[0].id); else addOpportunity();
+// ---------- home ----------
+async function renderHome() {
+  $("#root").innerHTML = topbar() + `<div class="wrap"><div class="empty"><span class="spin"></span></div></div>`;
+  bindTop();
+  const opps = await api("opportunities");
+  const first = (me.user.name || "").split(" ")[0];
+  $("#root").innerHTML = topbar() + `
+  <div class="wrap">
+    <div class="hello rise">
+      <div><div class="tag">${first ? `Welcome back, ${esc(first)}` : "Your offers"}</div><h1 class="serif">${opps.length ? "What's changed?" : "Start with one offer."}</h1></div>
+    </div>
+    <div class="grid">
+      <div class="ocard newcard rise" id="newCard"><div class="plus">+</div><div><b>New offer</b><div class="small muted">One card per job or collaboration conversation</div></div></div>
+      ${opps.map((o, i) => `
+        <div class="ocard rise" style="animation-delay:${0.04 * (i + 1)}s" data-id="${o.id}">
+          <div class="tag">${o.status === "closed" ? "Closed" : "Active"} · ${day(o.last_activity_at)}</div>
+          <h3>${esc(o.label)}</h3>
+          <div class="small muted">${o.events} message${o.events === 1 ? "" : "s"} remembered</div>
+          <div class="st">${o.conflicts ? `<span class="badge now">${o.conflicts} changed term${o.conflicts === 1 ? "" : "s"}</span>` : o.events ? `<span class="badge ok">no changes yet</span>` : `<span class="badge">waiting for the first message</span>`}</div>
+        </div>`).join("")}
+    </div>
+  </div>`;
+  bindTop();
+  $("#newCard").onclick = newOffer;
+  $$(".ocard[data-id]").forEach((c) => (c.onclick = () => (location.hash = `#/o/${c.dataset.id}`)));
 }
 
-async function loadOpps() {
-  opps = await api("opportunities");
-  $("#oppList").innerHTML = opps.length ? opps.map((o) => `
-    <div class="opp ${current?.id === o.id ? "sel" : ""}" data-id="${o.id}">
-      <b>${esc(o.label)}</b>
-      <small>${o.events} update${o.events === 1 ? "" : "s"} · ${when(o.last_activity_at)}</small>
-      ${o.conflicts ? `<div><span class="pill bad">${o.conflicts} changed condition${o.conflicts === 1 ? "" : "s"}</span></div>` : ""}
-      ${o.status === "closed" ? `<div><span class="pill">closed</span></div>` : ""}
-    </div>`).join("") : `<div class="empty">No opportunities yet.</div>`;
-  document.querySelectorAll(".opp").forEach((el) => (el.onclick = () => openOpp(el.dataset.id)));
-}
-
-function addOpportunity() {
-  modal(`<h3 style="margin-top:0">New opportunity</h3>
-    <p class="fine">Name it so you recognise it, e.g. "Frontend contract, Northstar" or "Web3 collab via Telegram".</p>
-    <input id="lbl" placeholder="Opportunity name" maxlength="80" />
-    <div style="margin-top:12px;display:flex;gap:8px"><button id="mk">Create</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+function newOffer() {
+  modal(`<div class="tag">New offer</div><h2 class="serif" style="margin:.2em 0 .4em;font-size:32px">What should we call it?</h2>
+    <p class="muted small">Something you'll recognise, like "Frontend contract, Northstar" or "Web3 collab from Telegram".</p>
+    <input id="lbl" maxlength="80" placeholder="Name this offer" />
+    <div style="display:flex;gap:10px;margin-top:16px"><button id="mk">Create</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
   $("#lbl").focus();
-  const go = async () => {
-    const label = $("#lbl").value.trim(); if (!label) return;
-    try { const o = await api("opportunities", { label }); closeModal(); await loadOpps(); openOpp(o.id); } catch (e) { toast(e.message); }
-  };
+  const go = async () => { const label = $("#lbl").value.trim(); if (!label) return; try { const o = await api("opportunities", { label }); closeModal(); location.hash = `#/o/${o.id}`; } catch (e) { toast(e.message); } };
   $("#mk").onclick = go; $("#lbl").onkeydown = (e) => { if (e.key === "Enter") go(); };
 }
 
-async function openOpp(id) {
-  clearInterval(poll);
-  current = await api(`opportunity?id=${encodeURIComponent(id)}`);
-  document.querySelectorAll(".opp").forEach((el) => el.classList.toggle("sel", el.dataset.id === id));
-  renderOpp();
-  if (current.timeline.some((e) => e.archive_status === "pending")) poll = setInterval(refreshArchive, 5000);
+// ---------- offer view ----------
+function saved(e) {
+  if (e.archive_status === "done") return `<a href="https://walruscan.com/mainnet/blob/${esc(e.blob_id)}" target="_blank">✓ remembered on Walrus</a>`;
+  if (e.archive_status === "failed") return `<span style="color:#b42318">couldn't save to Walrus</span>`;
+  return `<span><span class="spin" style="width:10px;height:10px"></span> saving to Walrus…</span>`;
 }
 
-function saveBadge(e) {
-  if (e.archive_status === "done") return `<span class="save" style="color:var(--good)">saved on Walrus · <a href="https://walruscan.com/mainnet/blob/${esc(e.blob_id)}" target="_blank">${esc(e.blob_id.slice(0, 10))}…</a></span>`;
-  if (e.archive_status === "failed") return `<span class="save" style="color:var(--bad)">saving to Walrus failed</span>`;
-  return `<span class="save"><span class="spin"></span> saving to Walrus…</span>`;
+function thenNow(c, a, used) {
+  // Pair each explained change with the exact quotes Jev compared.
+  // Several pairs can share the same S1 -> S2 sources, so pick the one whose quotes best match this change's wording.
+  const words = (s) => new Set(String(s).toLowerCase().match(/[a-z0-9$]{3,}/g) || []);
+  const what = words(c.what);
+  const overlap = (j) => [...words(j.pair.prior.quote + " " + j.pair.current.quote)].filter((w) => what.has(w)).length;
+  const pairs = (a.jev || []).filter((j) => j.pair.prior.source === c.prior && j.pair.current.source === c.current && !used.has(j.id));
+  const p = pairs.sort((x, y) => overlap(y) - overlap(x) || (y.probabilities[c.relation] || 0) - (x.probabilities[c.relation] || 0))[0];
+  if (p) used.add(p.id);
+  const prob = p ? (p.probabilities[c.relation] ?? p.probabilities[p.choice] ?? 0) : null;
+  return `<div class="tn ${c.relation === "change" ? "soft" : ""}">
+    <div class="then"><div class="tag">Then · <span class="src" data-src="${esc(c.prior)}">${esc(c.prior)}</span></div><div class="q">${p ? `"${esc(p.pair.prior.quote)}"` : ""}</div></div>
+    <div class="now"><div class="tag" style="color:${c.relation === "change" ? "var(--warn)" : "var(--now)"}">Now · <span class="src" data-src="${esc(c.current)}">${esc(c.current)}</span></div><div class="q">${p ? `"${esc(p.pair.current.quote)}"` : ""}</div></div>
+    <div class="cap"><span>${esc(c.what)}</span>${prob !== null ? `<span class="meter" title="Jev's probability for this relation">${esc(c.relation)}<span><i style="width:${Math.round(prob * 100)}%;${c.relation === "change" ? "background:var(--warn)" : ""}"></i></span>${prob.toFixed(2)}</span>` : ""}</div>
+  </div>`;
 }
 
-function renderAssessment(a) {
+function renderLook(e) {
+  const a = e.assessment;
   if (!a) return "";
-  const changes = (a.changes || []).map((c) => `
-    <div class="change ${c.relation === "change" ? "change-kind" : ""}">
-      <div class="lbl">${c.relation === "contradiction" ? "Changed condition" : "New or altered condition"} · <span class="chip" data-src="${esc(c.prior)}">${esc(c.prior)}</span> → <span class="chip" data-src="${esc(c.current)}">${esc(c.current)}</span></div>
-      <div>${esc(c.what)}</div>
-    </div>`).join("");
-  const notes = (a.notes || []).map((n) => `<div style="margin:6px 0">${esc(n.text)} ${(n.sources || []).map((s) => `<span class="chip" data-src="${esc(s)}">${esc(s)}</span>`).join(" ")}</div>`).join("");
-  const jev = (a.jev || []).map((j) => {
-    const p = j.probabilities?.[j.choice] ?? 0;
-    return `<div class="jev"><span class="bar" style="width:${Math.round(p * 60)}px"></span>${esc(j.pair.prior.source)} → ${esc(j.pair.current.source)} · ${esc(j.pair.topic)} · <b>${esc(j.choice)}</b> ${p.toFixed(2)}<br/><span style="margin-left:66px">"${esc(j.pair.prior.quote)}" vs "${esc(j.pair.current.quote)}"</span></div>`;
-  }).join("");
-  return `<div class="ans">
+  const used = new Set();
+  const isFirst = !a.recall?.prior_events;
+  const changes = (a.changes || []).map((c) => thenNow(c, a, used)).join("");
+  const base = isFirst ? `<div class="base">${(e.claims || []).slice(0, 8).map((c) => `<span>${esc(c.statement)}</span>`).join("")}</div>` : "";
+  const notes = changes ? "" : (a.notes || []).map((n) => `<p style="margin:8px 0 0">${esc(n.text)} ${(n.sources || []).map((s) => `<span class="src" data-src="${esc(s)}">${esc(s)}</span>`).join(" ")}</p>`).join("");
+  const jev = (a.jev || []).map((j) => `<div class="jrow">${esc(j.pair.prior.source)} → ${esc(j.pair.current.source)} · ${esc(j.pair.topic)} · <b>${esc(j.choice)}</b> ${(j.probabilities[j.choice] ?? 0).toFixed(2)}<br/>"${esc(j.pair.prior.quote)}" vs "${esc(j.pair.current.quote)}"</div>`).join("");
+  return `<div class="look">
+    <div class="kicker"><span class="eye">Second look</span><span class="tag">${isFirst ? "baseline saved" : `${a.recall?.recalled_events ?? 0} earlier message${a.recall?.recalled_events === 1 ? "" : "s"} recalled from Walrus`}</span></div>
     <h4>${esc(a.headline)}</h4>
-    ${changes}${notes}
-    ${a.unknown ? `<div class="unknown"><span class="lbl">Still unknown</span><br/>${esc(a.unknown)}</div>` : ""}
-    ${a.next_check ? `<div class="next"><span class="lbl" style="color:#065f46">Next check</span><br/>${esc(a.next_check)}</div>` : ""}
-    <details class="trace"><summary>How this was decided: ${a.recall?.recalled_events ?? 0} earlier message${a.recall?.recalled_events === 1 ? "" : "s"} recalled from Walrus Memory · ${(a.jev || []).length} comparison${(a.jev || []).length === 1 ? "" : "s"} by Jev</summary>
-      ${jev || `<div class="jev">No earlier claims to compare yet.</div>`}
-      ${a.jev_error ? `<div class="jev" style="color:var(--bad)">${esc(a.jev_error)}</div>` : ""}
-      ${a.recall?.error ? `<div class="jev" style="color:var(--bad)">Recall unavailable: comparison may be incomplete.</div>` : ""}
-      <div class="jev">${esc(a.models?.explainer?.returned || "")} · ${esc(a.jev_model || "")}</div>
+    ${base}${changes}${isFirst ? "" : notes}
+    ${a.unknown ? `<div class="unknown"><span class="tag">Still unknown</span><br/>${esc(a.unknown)}</div>` : ""}
+    ${a.next_check ? `<div class="next"><span class="ic">→</span><div><div class="tag" style="color:var(--check)">Next check</div>${esc(a.next_check)}</div></div>` : ""}
+    <details class="trace"><summary>How Revoir decided</summary>
+      <div class="jrow">Recall: ${a.recall?.recalled_events ?? 0} of ${a.recall?.prior_events ?? 0} earlier messages came back from Walrus Memory${a.recall?.error ? " (recall failed: comparison may be incomplete)" : ""}.</div>
+      ${jev || `<div class="jrow">Nothing earlier to compare yet.</div>`}
+      ${a.jev_error ? `<div class="jrow" style="color:#b42318">${esc(a.jev_error)}</div>` : ""}
+      <div class="jrow">Models: ${esc(a.models?.extractor?.returned || "")} (reading, explaining) · ${esc(a.jev_model || "jev")} (comparing)</div>
     </details>
   </div>`;
 }
 
-function renderOpp() {
-  const o = current;
-  const closed = o.status === "closed";
-  $("#main").innerHTML = `
-    <header>
-      <h2>${esc(o.label)}</h2>
-      <button class="ghost" id="stBtn">${closed ? "Reopen" : "Close"}</button>
-      <button class="ghost" id="fgBtn">Forget</button>
-    </header>
-    <div id="thread">${o.timeline.length ? "" : `<div class="empty">Paste the first message you received about this opportunity. Then come back and paste each new message as the conversation goes on.</div>`}
-      ${o.timeline.map((e) => e.kind === "source_message" ? `
-        <div class="src" id="src-${esc(e.source_id)}">${esc(e.text)}</div>
-        <div class="srcmeta">${esc(e.source_id)} · ${when(e.recorded_at)} · ${saveBadge(e)}</div>
-        ${renderAssessment(e.assessment)}` : `
-        <div class="srcmeta" style="text-align:left">${esc(e.source_id)} · correction · ${esc(e.text)} · ${saveBadge(e)}</div>`).join("")}
-    </div>
-    <div class="composer">
-      ${closed ? `<div class="fine">This opportunity is closed. Reopen it to add updates.</div>` : `
-      <textarea id="msg" placeholder="Paste the latest message from them, exactly as you received it..."></textarea>
-      <div class="row"><span class="fine">Revoir compares it with everything earlier in this opportunity. Remove codes, passwords and ID numbers first.</span><button id="send">Add update</button></div>`}
-    </div>`;
-  const th = $("#thread"); th.scrollTop = th.scrollHeight;
-  th.querySelectorAll(".chip").forEach((c) => (c.onclick = () => $("#src-" + c.dataset.src)?.scrollIntoView({ behavior: "smooth", block: "center" })));
-  $("#stBtn").onclick = async () => { await api("status", { id: o.id, status: closed ? "active" : "closed" }); await loadOpps(); openOpp(o.id); };
-  $("#fgBtn").onclick = () => modal(`<h3 style="margin-top:0">Forget "${esc(o.label)}"?</h3>
-      <p class="fine">Revoir immediately stops using this opportunity and its derived memory items. Removal of the encrypted Walrus copies is a separate step that is still pending in this version, and it cannot erase copies held by the original messaging service.</p>
-      <div style="display:flex;gap:8px"><button id="fgYes" style="background:var(--bad)">Forget</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`) || ($("#fgYes").onclick = async () => { await api("forget", { id: o.id }); closeModal(); current = null; await loadOpps(); opps[0] ? openOpp(opps[0].id) : boot(); });
-  if (!closed) { $("#send").onclick = send; $("#msg").onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }; $("#msg").focus(); }
-  renderDetails();
+async function renderOffer(id) {
+  clearInterval(poll);
+  $("#root").innerHTML = topbar() + `<div class="wrap"><div class="empty"><span class="spin"></span></div></div>`;
+  bindTop();
+  try { current = await api(`opportunity?id=${encodeURIComponent(id)}`); } catch (e) { toast(e.message); location.hash = "#/"; return; }
+  paintOffer();
+  if (current.timeline.some((e) => e.archive_status === "pending")) poll = setInterval(refreshSaves, 5000);
 }
 
-function renderDetails() {
+function paintOffer(keepScroll) {
+  const o = current, closed = o.status === "closed";
+  const msgs = o.timeline.filter((e) => e.kind === "source_message");
+  const y = window.scrollY;
+  $("#root").innerHTML = topbar() + `
+  <div class="wrap">
+    <div class="ohead">
+      <button class="text" id="backBtn">← All offers</button>
+      <h1 class="serif">${esc(o.label)}</h1>
+      <button class="ghost" id="stBtn">${closed ? "Reopen" : "Close"}</button>
+      <button class="text" id="fgBtn">Forget</button>
+    </div>
+    <div class="split">
+      <div>
+        <div class="thread" id="thread">
+          ${msgs.length ? msgs.map((e) => `
+            <div class="msg" id="src-${esc(e.source_id)}">
+              <div class="rail"><span class="sid">${esc(e.source_id)}</span></div>
+              <div>
+                <div class="theirs">${esc(e.text)}</div>
+                <div class="meta"><span>${when(e.recorded_at)}</span>${saved(e)}</div>
+                ${renderLook(e)}
+              </div>
+            </div>`).join("") : `<div class="empty"><span class="serif">Paste the first message.</span>Copy what they sent you, exactly as written. Then come back and paste each new message as the conversation goes on.</div>`}
+        </div>
+        <div class="composer">${closed ? `<div class="empty small">This offer is closed. Reopen it to add messages.</div>` : `
+          <div class="box">
+            <textarea id="msg" placeholder="${msgs.length ? "Paste their latest message…" : "Paste the first message they sent you…"}"></textarea>
+            <div class="row"><span class="small muted">Revoir compares it with everything earlier in this offer. Remove codes, passwords and ID numbers.</span><button id="send">${msgs.length ? "Take a second look" : "Save as baseline"}</button></div>
+          </div>`}
+        </div>
+      </div>
+      <aside class="deal" id="deal"></aside>
+    </div>
+  </div>`;
+  bindTop();
+  paintDeal();
+  $$("#thread .src").forEach((s) => (s.onclick = () => jump(s.dataset.src)));
+  $("#backBtn").onclick = () => (location.hash = "#/");
+  $("#stBtn").onclick = async () => { await api("status", { id: o.id, status: closed ? "active" : "closed" }); renderOffer(o.id); };
+  $("#fgBtn").onclick = forgetOffer;
+  if (!closed) { $("#send").onclick = send; $("#msg").onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }; }
+  if (keepScroll) window.scrollTo(0, y); else if (msgs.length) window.scrollTo(0, document.body.scrollHeight);
+}
+
+function jump(sid) {
+  const el = document.getElementById("src-" + sid);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  const b = el.querySelector(".theirs"); b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash");
+}
+
+function paintDeal() {
   const d = current.details || {};
-  const keys = Object.keys(TOPIC).filter((k) => d[k]);
-  $("#right").innerHTML = `<header><b>Current details</b><span class="fine">from ${current.timeline.length} source${current.timeline.length === 1 ? "" : "s"}</span></header>` + (keys.length ? keys.map((k) => {
-    const t = d[k];
-    const hist = t.history.filter((h) => h.claim_id !== t.current?.claim_id);
-    return `<div class="topic">
-      <div class="t"><span>${TOPIC[k]}</span>${t.state === "conflicting_claims" ? `<span class="pill bad">changed</span>` : ""}</div>
-      ${t.current ? `<div class="cur">${esc(t.current.statement)} <span class="chip" data-src="${esc(t.current.source)}">${esc(t.current.source)}</span>${t.current.requested_action ? ` <span class="pill warn">asks you to act</span>` : ""}
-        <button class="link" data-fix="${esc(t.current.claim_id)}">correct</button></div>` : ""}
-      ${hist.map((h) => `<div class="hist">${h.state === "superseded" || h.state === "withdrawn" ? `<s>${esc(h.statement)}</s> (${h.state})` : `${h.state === "disputed" ? "Earlier: " : ""}${esc(h.statement)}`} <span class="chip" data-src="${esc(h.source)}">${esc(h.source)}</span>${h.state === "active" || h.state === "disputed" ? ` <button class="link" data-fix="${esc(h.claim_id)}">correct</button>` : ""}</div>`).join("")}
-    </div>`;
-  }).join("") : `<div class="empty">Details appear as you add messages.</div>`);
-  $("#right").querySelectorAll(".chip").forEach((c) => (c.onclick = () => $("#src-" + c.dataset.src)?.scrollIntoView({ behavior: "smooth", block: "center" })));
-  $("#right").querySelectorAll("[data-fix]").forEach((b) => (b.onclick = () => correct(b.dataset.fix)));
+  const keys = ORDER.filter((k) => d[k]);
+  const changed = keys.filter((k) => d[k].state === "conflicting_claims").length;
+  $("#deal").innerHTML = `<header><div class="tag">${changed ? `${changed} term${changed === 1 ? "" : "s"} changed` : "From the messages so far"}</div><h3>The deal as it stands</h3></header>` +
+    (keys.length ? keys.map((k) => {
+      const t = d[k], cur = t.current;
+      const earlier = t.history.filter((h) => h.claim_id !== cur?.claim_id);
+      return `<div class="term">
+        <div class="h"><span class="tag">${TOPIC[k]}</span>${t.state === "conflicting_claims" ? `<span class="badge now">changed</span>` : ""}</div>
+        ${cur ? `<div class="cur">${esc(cur.statement)} <span class="src" data-src="${esc(cur.source)}">${esc(cur.source)}</span>${cur.requested_action ? `<span class="act">asks you to act</span>` : ""} <button class="text small" data-fix="${esc(cur.claim_id)}">correct</button></div>` : ""}
+        ${earlier.map((h) => `<div class="was">${h.state === "superseded" || h.state === "withdrawn" ? `<s>${esc(h.statement)}</s> · ${esc(h.state)} by you` : h.state === "disputed" ? `Was: <s>${esc(h.statement)}</s>` : esc(h.statement)} <span class="src" data-src="${esc(h.source)}">${esc(h.source)}</span></div>`).join("")}
+      </div>`;
+    }).join("") : `<div class="empty small">Terms appear here as you paste messages, each linked to the message it came from.</div>`);
+  $$("#deal .src").forEach((s) => (s.onclick = () => jump(s.dataset.src)));
+  $$("#deal [data-fix]").forEach((b) => (b.onclick = () => correct(b.dataset.fix)));
+}
+
+async function send() {
+  const text = $("#msg").value.trim(); if (!text) return;
+  const btn = $("#send"); btn.disabled = true;
+  $("#thread .empty")?.remove();
+  const n = current.timeline.filter((e) => e.kind === "source_message").length;
+  $("#thread").insertAdjacentHTML("beforeend", `
+    <div class="msg rise" id="pendingMsg"><div class="rail"><span class="sid">S${n + 1}</span></div><div>
+      <div class="theirs">${esc(text)}</div>
+      <div class="look"><ul class="working" id="working">
+        <li><span class="spin"></span>Reading the message and quoting each claim</li>
+        <li><span class="b">·</span>Recalling what they told you before, from Walrus</li>
+        <li><span class="b">·</span>Comparing then and now with Jev</li>
+        <li><span class="b">·</span>Writing your second look</li>
+      </ul></div></div></div>`);
+  $("#msg").value = "";
+  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  let k = 0;
+  const steps = () => $$("#working li").forEach((li, i) => { li.className = i < k ? "done" : i === k ? "on" : ""; li.firstElementChild.outerHTML = i < k ? `<span class="b">✓</span>` : i === k ? `<span class="spin"></span>` : `<span class="b">·</span>`; });
+  const t = setInterval(() => { if (k < 3) { k++; steps(); } }, n ? 2600 : 2200);
+  try {
+    await api("message", { id: current.id, text, idem: crypto.randomUUID() });
+    clearInterval(t);
+    current = await api(`opportunity?id=${encodeURIComponent(current.id)}`);
+    paintOffer();
+    clearInterval(poll); poll = setInterval(refreshSaves, 5000);
+  } catch (e) {
+    clearInterval(t);
+    $("#pendingMsg .look").innerHTML = `Couldn't analyze this: ${esc(e.message)}`;
+    $("#msg").value = text; btn.disabled = false;
+  }
+}
+
+async function refreshSaves() {
+  if (!current || !location.hash.startsWith("#/o/")) return clearInterval(poll);
+  const fresh = await api(`opportunity?id=${encodeURIComponent(current.id)}`).catch(() => null);
+  if (!fresh) return;
+  const changed = fresh.timeline.some((e, i) => e.archive_status !== current.timeline[i]?.archive_status);
+  const typing = $("#msg")?.value;
+  current = fresh;
+  if (changed && !typing) paintOffer(true);
+  if (!fresh.timeline.some((e) => e.archive_status === "pending")) clearInterval(poll);
 }
 
 function correct(claimId) {
-  modal(`<h3 style="margin-top:0">Correct this reading</h3>
-    <p class="fine">Your correction is added to the history. The original message is never edited.</p>
-    <textarea id="fix" placeholder="What it actually says, e.g. 'The company pays the equipment deposit, not me.'"></textarea>
-    <div style="margin-top:12px;display:flex;gap:8px"><button id="fixGo">Save correction</button><button class="ghost" id="wd">It doesn't say this at all</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+  modal(`<div class="tag">Correct Revoir's reading</div><h2 class="serif" style="margin:.2em 0 .4em;font-size:30px">What does it actually say?</h2>
+    <p class="muted small">Your correction is added to the history and Revoir stops relying on the old reading. The original message is never edited.</p>
+    <textarea id="fix" placeholder="e.g. The company pays the equipment deposit, not me."></textarea>
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button id="fixGo">Save correction</button><button class="ghost" id="wd">It doesn't say this at all</button><button class="text" onclick="closeModal()">Cancel</button></div>`);
+  $("#fix").focus();
   const go = async (action) => {
-    try { await api("correct", { id: current.id, claim_id: claimId, action, replacement: action === "replace" ? $("#fix").value.trim() : "", idem: crypto.randomUUID() }); closeModal(); toast("Correction saved"); openOpp(current.id); }
+    try { await api("correct", { id: current.id, claim_id: claimId, action, replacement: action === "replace" ? $("#fix").value.trim() : "", idem: crypto.randomUUID() }); closeModal(); toast("Correction saved"); renderOffer(current.id); }
     catch (e) { toast(e.message); }
   };
   $("#fixGo").onclick = () => $("#fix").value.trim() && go("replace");
   $("#wd").onclick = () => go("withdraw");
 }
 
-async function send() {
-  const text = $("#msg").value.trim(); if (!text) return;
-  const btn = $("#send"); btn.disabled = true;
-  const th = $("#thread");
-  th.querySelector(".empty")?.remove();
-  th.insertAdjacentHTML("beforeend", `<div class="src">${esc(text)}</div><div class="ans" id="pending"><span class="spin"></span> Reading the message, recalling what they told you before, comparing…</div>`);
-  th.scrollTop = th.scrollHeight;
-  $("#msg").value = "";
-  try {
-    await api("message", { id: current.id, text, idem: crypto.randomUUID() });
-    await loadOpps(); await openOpp(current.id);
-  } catch (e) {
-    $("#pending").innerHTML = `Couldn't analyze this: ${esc(e.message)}`; $("#msg").value = text;
-  } finally { btn.disabled = false; }
+function forgetOffer() {
+  modal(`<div class="tag">Forget this offer</div><h2 class="serif" style="margin:.2em 0 .4em;font-size:30px">Stop using "${esc(current.label)}"?</h2>
+    <p class="muted small">Revoir immediately stops using this offer and anything derived from it. Removing the encrypted copies from Walrus is a separate step that is still pending in this version, and nothing can erase copies held by the app the messages came from.</p>
+    <div style="display:flex;gap:10px;margin-top:16px"><button class="danger" id="fgYes">Forget</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+  $("#fgYes").onclick = async () => { await api("forget", { id: current.id }); closeModal(); toast("Forgotten"); location.hash = "#/"; };
 }
 
-async function refreshArchive() {
-  if (!current) return clearInterval(poll);
-  const fresh = await api(`opportunity?id=${encodeURIComponent(current.id)}`).catch(() => null);
-  if (!fresh) return;
-  const changed = fresh.timeline.some((e, i) => e.archive_status !== current.timeline[i]?.archive_status);
-  current = fresh;
-  if (changed) { const th = $("#thread"); const y = th.scrollTop; renderOpp(); $("#thread").scrollTop = y; }
-  if (!fresh.timeline.some((e) => e.archive_status === "pending")) clearInterval(poll);
+async function showMemory() {
+  modal(`<div class="tag">My memory</div><h2 class="serif" style="margin:.2em 0 .4em;font-size:32px">What Revoir keeps across offers</h2><div class="empty"><span class="spin"></span></div>`);
+  const items = await api("memory");
+  $("#modalBody").innerHTML = `<div class="tag">My memory</div><h2 class="serif" style="margin:.2em 0 .4em;font-size:32px">What Revoir keeps across offers</h2>
+    <p class="muted small">Open checks from all your offers, each linked to where it came from, stored encrypted in your own memory account on Walrus.</p>
+    ${items.length ? items.map((i) => `<div style="border-top:1px solid var(--line);padding:12px 0">${esc(i.statement)}<div class="meta"><span>${when(i.created_at)}</span>${i.archive_status === "done" ? `<a href="https://walruscan.com/mainnet/blob/${esc(i.blob_id)}" target="_blank">✓ on Walrus</a>` : `<span>${esc(i.archive_status)}</span>`}<button class="text small" data-o="${esc(i.opportunity_id)}">open offer</button></div></div>`).join("") : `<div class="empty small">Nothing yet.</div>`}
+    <button class="ghost" onclick="closeModal()" style="margin-top:10px">Close</button>`;
+  $$("[data-o]").forEach((b) => (b.onclick = () => { closeModal(); location.hash = `#/o/${b.dataset.o}`; }));
 }
 
 async function showWallet() {
   const w = await api("wallet");
-  const link = (kind, id) => `<a href="https://suiscan.xyz/mainnet/${kind}/${esc(id)}" target="_blank">${esc(id.slice(0, 10))}…${esc(id.slice(-6))}</a>`;
-  modal(`<h3 style="margin-top:0">My wallet</h3>
-    ${w.status === "ready" ? `
-      <p class="fine">Revoir created this Sui wallet for your Google account (same account, same address, on any device). It owns your Walrus Memory account, so every memory Revoir saves for you is owned by <b>your</b> address on Sui mainnet. Fees were sponsored.</p>
-      <table class="fine" style="width:100%;border-collapse:collapse">
-        <tr><td style="padding:4px 0">Wallet</td><td>${link("account", w.address)}</td></tr>
-        <tr><td style="padding:4px 0">Memory account</td><td>${link("object", w.memwal_account_id)}</td></tr>
-        <tr><td style="padding:4px 0">Created in</td><td>${link("tx", w.create_digest)}</td></tr>
-        <tr><td style="padding:4px 0">Revoir's access key added in</td><td>${link("tx", w.delegate_digest)}</td></tr>
-      </table>
-      <h4 style="margin:18px 0 6px">Take it with you</h4>
-      <p class="fine">Export the private key to import the wallet into Slush or the Sui CLI. Anyone with this key controls the wallet and its memory account, including removing Revoir's access. Store it safely and never share it.</p>
-      <div id="expOut"></div>
-      <div style="display:flex;gap:8px;margin-top:8px"><button class="ghost" id="expBtn">Export private key</button><button class="ghost" onclick="closeModal()">Close</button></div>`
-    : `<p class="fine">Your wallet is ${esc(w.status)}.</p><div style="display:flex;gap:8px"><button id="provBtn">Create my wallet</button><button class="ghost" onclick="closeModal()">Close</button></div>`}`);
-  if ($("#provBtn")) $("#provBtn").onclick = async () => { $("#provBtn").disabled = true; $("#provBtn").innerHTML = `<span class="spin"></span> Creating…`; try { await api("wallet/provision", {}); closeModal(); boot(); } catch (e) { toast(e.message); $("#provBtn").disabled = false; $("#provBtn").textContent = "Retry"; } };
-  if ($("#expBtn")) $("#expBtn").onclick = async () => {
+  const link = (kind, id) => `<a href="https://suiscan.xyz/mainnet/${kind}/${esc(id)}" target="_blank">${esc(short(id))}</a>`;
+  modal(w.status === "ready" ? `
+    <div class="tag">My wallet</div><h2 class="serif" style="margin:.2em 0 .4em;font-size:32px">Your memory belongs to you.</h2>
+    <p class="muted small">Revoir created this Sui wallet for your Google account: the same account gets the same address on any device. It owns your Walrus Memory account, so every message Revoir remembers for you is owned by your address on Sui mainnet. Fees were sponsored.</p>
+    <div class="kv"><span class="muted">Wallet</span>${link("account", w.address)}<span class="muted">Memory account</span>${link("object", w.memwal_account_id)}<span class="muted">Created in</span>${link("tx", w.create_digest)}<span class="muted">Revoir's access added in</span>${link("tx", w.delegate_digest)}</div>
+    <div class="tag" style="margin-top:20px">Take it with you</div>
+    <p class="small">Export the private key to import this wallet into Slush or the Sui CLI. Whoever holds it controls the wallet and its memory account, including removing Revoir's access. Never share it.</p>
+    <div id="expOut"></div>
+    <div style="display:flex;gap:10px;margin-top:12px"><button class="ghost" id="expBtn">Export private key</button><button class="text" onclick="closeModal()">Close</button></div>` : `
+    <div class="tag">My wallet</div><h2 class="serif" style="margin:.2em 0 .4em;font-size:32px">Set up your wallet</h2>
+    <p class="muted small">Your wallet is ${esc(w.status)}. It's created automatically on your first update, or now.</p>
+    <div style="display:flex;gap:10px"><button id="provBtn">Create my wallet</button><button class="text" onclick="closeModal()">Close</button></div>`);
+  $("#provBtn") && ($("#provBtn").onclick = async () => { $("#provBtn").disabled = true; $("#provBtn").innerHTML = `<span class="spin"></span> Creating…`; try { me.wallet = await api("wallet/provision", {}); closeModal(); route(); } catch (e) { toast(e.message); $("#provBtn").disabled = false; $("#provBtn").textContent = "Retry"; } });
+  $("#expBtn") && ($("#expBtn").onclick = async () => {
     if (!confirm("Show your wallet's private key? Anyone who sees it controls your wallet.")) return;
     const r = await api("wallet/export", { confirm: "export" });
-    $("#expOut").innerHTML = `<textarea readonly style="font:12px var(--mono);min-height:52px">${esc(r.suiprivkey)}</textarea>`;
+    $("#expOut").innerHTML = `<textarea readonly class="mono" style="font-size:12px;min-height:56px">${esc(r.suiprivkey)}</textarea>`;
     $("#expBtn").remove();
-  };
+  });
 }
 
-async function showMemory() {
-  modal(`<h3 style="margin-top:0">My memory</h3><p class="fine"><span class="spin"></span> loading…</p>`);
-  const items = await api("memory");
-  modal(`<h3 style="margin-top:0">My memory</h3>
-    <p class="fine">What Revoir keeps across your opportunities. Each item links back to where it came from, and is stored encrypted in your private memory on Walrus.</p>
-    ${items.length ? items.map((i) => `<div style="border-top:1px solid var(--line);padding:10px 0">${esc(i.statement)}<br/><span class="fine">${when(i.created_at)} · ${i.archive_status === "done" ? `saved on Walrus · <a href="https://walruscan.com/mainnet/blob/${esc(i.blob_id)}" target="_blank">${esc(i.blob_id.slice(0, 10))}…</a>` : esc(i.archive_status)} · <button class="link" data-o="${esc(i.opportunity_id)}">open</button></span></div>`).join("") : `<p class="empty">Nothing yet.</p>`}
-    <button class="ghost" onclick="closeModal()">Close</button>`);
-  document.querySelectorAll("[data-o]").forEach((b) => (b.onclick = () => { closeModal(); openOpp(b.dataset.o); }));
+// ---------- router ----------
+async function route() {
+  if (!me) { try { me = await api("me"); } catch { return; } }
+  if (!me.consent) return renderSetup();
+  const m = location.hash.match(/^#\/o\/([0-9a-f-]{36})/);
+  if (m) return renderOffer(m[1]);
+  return renderHome();
 }
-
-boot();
+window.addEventListener("hashchange", () => me && route());
+(async () => { try { me = await api("me"); } catch { return renderLanding(); } route(); })();
 </script>
 </body>
 </html>

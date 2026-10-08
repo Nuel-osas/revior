@@ -5,7 +5,7 @@ import { finishGoogle, requireUser, signOut, startGoogle } from "../lib/auth.js"
 import { cfg } from "../lib/config.js";
 import { open, seal } from "../lib/crypto.js";
 import { sql } from "../lib/db.js";
-import { loadOpportunity, rebuildDetails, submitCorrection, submitMessage } from "../lib/pipeline.js";
+import { loadOpportunity, rebuildDetails, submitCorrection, submitMessage, submitRepoScan } from "../lib/pipeline.js";
 import { transcribeImage } from "../lib/providers.js";
 import { exportWallet, provisionWallet, publicView, walletFor } from "../lib/wallet.js";
 
@@ -97,6 +97,13 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
     if (Number(n) >= cfg.dailyLimit) throw Object.assign(new Error("daily limit reached, try again tomorrow"), { status: 429 });
     const origin = b.origin === "screenshot" ? "screenshot" : "user_paste";
     return res.json(await submitMessage(userId, o.id, text, String(b.idem ?? randomUUID()), open(o.label_ct), origin, origin === "screenshot" ? String(b.platform ?? "other").slice(0, 20) : undefined));
+  }
+  if (path === "scan" && m === "POST") {
+    const o = await loadOpportunity(userId, String(b.id));
+    if (o.status !== "active") throw Object.assign(new Error("reopen this opportunity to add updates"), { status: 400 });
+    const [{ n }] = await sql`select count(*) as n from memory_events where user_id = ${userId} and recorded_at > now() - interval '1 day'`;
+    if (Number(n) >= cfg.dailyLimit) throw Object.assign(new Error("daily limit reached, try again tomorrow"), { status: 429 });
+    return res.json(await submitRepoScan(userId, o.id, String(b.url ?? ""), String(b.idem ?? randomUUID()), open(o.label_ct)));
   }
   if (path === "transcribe" && m === "POST") {
     await loadOpportunity(userId, String(b.id));

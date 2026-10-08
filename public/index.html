@@ -424,6 +424,24 @@
   .shot[hidden] { display: none; }
   .composer .box.drag { outline: 2px dashed var(--now); outline-offset: 3px; }
   button.attach { display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; font-weight: 500; }
+  .scan { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; }
+  .scan.danger { border-color: #f2b8b5; }
+  .scan.caution { border-color: #f1d48a; }
+  .scan-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .scan-h a { font-weight: 600; text-decoration: none; }
+  .scan-badge { font: 600 12.5px var(--sans); padding: 4px 10px; border-radius: 999px; background: #e4f5e9; color: #15803d; }
+  .scan.danger .scan-badge { background: #fde7e6; color: #b42318; }
+  .scan.caution .scan-badge { background: #fdf3d8; color: #a16207; }
+  .scan-sum { margin: 10px 0 6px; font-size: 15px; }
+  .scan-run { background: #fff7f6; border-radius: 12px; padding: 10px 14px; margin: 10px 0; }
+  .scan-run ul { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
+  .finding { border-top: 1px dashed var(--line); padding: 10px 0 4px; }
+  .finding .fh { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .finding .sev { font: 600 11px var(--sans); text-transform: uppercase; padding: 1px 7px; border-radius: 6px; background: #f3efe7; color: var(--ink2); }
+  .finding.high .sev { background: #fde7e6; color: #b42318; }
+  .finding.medium .sev { background: #fdf3d8; color: #a16207; }
+  .finding .loc { margin-left: auto; font: 500 12.5px var(--mono); color: var(--check); text-decoration: none; }
+  .finding pre { margin: 6px 0 0; background: #14181b; color: #e6e1f5; border-radius: 10px; padding: 9px 11px; font: 12.5px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; }
 </style>
 </head>
 <body>
@@ -783,7 +801,7 @@ async function renderOffer(id) {
 
 function paintOffer(keepScroll) {
   const o = current, closed = o.status === "closed";
-  const msgs = o.timeline.filter((e) => e.kind === "source_message");
+  const msgs = o.timeline.filter((e) => e.kind === "source_message" || e.kind === "repo_scan");
   const y = window.scrollY;
   $("#root").innerHTML = topbar() + `
   <div class="wrap">
@@ -800,19 +818,22 @@ function paintOffer(keepScroll) {
             <div class="msg" id="src-${esc(e.source_id)}">
               <div class="rail"><span class="sid">${esc(e.source_id)}</span></div>
               <div>
+                ${e.kind === "repo_scan" ? renderScan(e) : `
                 <div class="theirs">${esc(e.text)}</div>
                 <div class="meta"><span>${when(e.recorded_at)}</span>${e.origin === "screenshot" ? `<span>from ${esc(e.platform && e.platform !== "other" ? e.platform : "a")} screenshot</span>` : ""}${saved(e)}</div>
-                ${renderLook(e)}
+                ${renderLook(e)}`}
               </div>
             </div>`).join("") : `<div class="empty"><span class="serif">Paste the first message.</span>Copy what they sent you, exactly as written. Then come back and paste each new message as the conversation goes on.</div>`}
         </div>
         <div class="composer">${closed ? `<div class="empty small">This offer is closed. Reopen it to add messages.</div>` : `
           <div class="box" id="box">
             <div id="shot" class="shot" hidden></div>
+            <div id="repoHint" class="shot" hidden></div>
             <textarea id="msg" placeholder="${msgs.length ? "Paste their latest message, or drop a screenshot…" : "Paste the first message they sent you, or drop a screenshot…"}"></textarea>
             <div class="row">
               <button class="ghost attach" id="attach" title="Add a screenshot"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Screenshot</button>
               <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden />
+              <button class="ghost attach" id="scanBtn" title="Scan a GitHub repo they asked you to run"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>Scan repo</button>
               <span class="small muted">Paste text or a screenshot (WhatsApp, Telegram, email). Remove codes, passwords and ID numbers.</span>
               <button id="send">${msgs.length ? "Take a second look" : "Save as baseline"}</button>
             </div>
@@ -832,6 +853,8 @@ function paintOffer(keepScroll) {
     $("#send").onclick = send;
     $("#msg").onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); };
     $("#attach").onclick = () => $("#file").click();
+    $("#scanBtn").onclick = () => { const u = ghLink($("#msg").value); u ? scanRepo(u) : askRepo(); };
+    $("#msg").addEventListener("input", repoHint);
     $("#file").onchange = (e) => e.target.files[0] && readShot(e.target.files[0]);
     $("#msg").addEventListener("paste", (e) => { const f = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith("image/")); if (f) { e.preventDefault(); readShot(f); } });
     const box = $("#box");
@@ -865,6 +888,62 @@ function paintDeal() {
     }).join("") : `<div class="empty small">Terms appear here as you paste messages, each linked to the message it came from.</div>`);
   $$("#deal .src").forEach((s) => (s.onclick = () => jump(s.dataset.src)));
   $$("#deal [data-fix]").forEach((b) => (b.onclick = () => correct(b.dataset.fix)));
+}
+
+// ---------- GitHub repo scan ----------
+const ghLink = (t) => (String(t).match(/https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+[^\s)"'\]]*/) || [])[0] || null;
+function repoHint() {
+  const u = ghLink($("#msg").value), el = $("#repoHint");
+  if (!u) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = `<span>This message links a GitHub repo. <b>Scan it before you clone or run anything.</b></span><button class="ghost attach" id="hintScan">Scan ${esc(u.replace(/^https?:\/\/(www\.)?github\.com\//, "").split(/[/?#]/).slice(0, 2).join("/"))}</button>`;
+  $("#hintScan").onclick = () => scanRepo(u);
+}
+function askRepo() {
+  modal(`<div class="tag">Scan a GitHub repo</div><h2 class="serif" style="margin:.2em 0 .5em;font-size:24px">Did they send you code to run?</h2>
+    <p class="muted small">"Clone this repo and run npm install" is a common way fake interviews deliver malware. Revoir downloads the public repo, never runs it, checks for install hooks, editor auto-run tasks, obfuscation, credential and wallet theft, then DeepSeek reviews the code and quotes the evidence.</p>
+    <input id="repoUrl" placeholder="https://github.com/owner/repo" />
+    <div style="display:flex;gap:10px;margin-top:16px"><button id="repoGo">Scan repo</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+  $("#repoUrl").focus();
+  const go = () => { const u = ghLink($("#repoUrl").value); if (!u) return toast("Paste a github.com link to a public repo"); closeModal(); scanRepo(u); };
+  $("#repoGo").onclick = go; $("#repoUrl").onkeydown = (e) => { if (e.key === "Enter") go(); };
+}
+async function scanRepo(url) {
+  $("#thread .empty")?.remove();
+  const n = current.timeline.filter((e) => e.kind === "source_message" || e.kind === "repo_scan").length;
+  $("#thread").insertAdjacentHTML("beforeend", `<div class="msg rise" id="pendingScan"><div class="rail"><span class="sid">S${n + 1}</span></div><div><div class="look"><ul class="working" id="scanWork">
+    <li class="on"><span class="spin"></span>Downloading ${esc(url.replace(/^https?:\/\//, ""))} (nothing is run)</li>
+    <li><span class="b">·</span>Checking install hooks, editor auto-run tasks and obfuscation</li>
+    <li><span class="b">·</span>Looking for credential, wallet and env-var theft</li>
+    <li><span class="b">·</span>DeepSeek reviewing the code and quoting evidence</li></ul></div></div></div>`);
+  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  let k = 0;
+  const t = setInterval(() => { if (k < 3) { k++; $$("#scanWork li").forEach((li, i) => { li.className = i < k ? "done" : i === k ? "on" : ""; li.firstElementChild.outerHTML = i < k ? `<span class="b">✓</span>` : i === k ? `<span class="spin"></span>` : `<span class="b">·</span>`; }); } }, 1500);
+  try {
+    await api("scan", { id: current.id, url, idem: crypto.randomUUID() });
+    clearInterval(t);
+    current = await api(`opportunity?id=${encodeURIComponent(current.id)}`);
+    paintOffer();
+    clearInterval(poll); poll = setInterval(refreshSaves, 5000);
+  } catch (e) {
+    clearInterval(t);
+    $("#pendingScan .look").innerHTML = `Couldn't scan: ${esc(e.message)}`;
+  }
+}
+function renderScan(e) {
+  const a = e.assessment || {};
+  const L = { red_flags: ["Red flags found", "danger"], caution: ["Look closer", "caution"], no_red_flags_found: ["No red flags found in what was scanned", "clear"] }[a.level] || ["Scanned", "clear"];
+  const at = a.commit || a.ref || "HEAD";
+  const fileUrl = (f) => `https://github.com/${a.repo}/blob/${at}/${f.file}${f.line ? `#L${f.line}` : ""}`;
+  return `<div class="scan ${L[1]}">
+    <div class="scan-h"><span class="scan-badge">${L[0]}</span><a href="${esc(a.url)}" target="_blank">${esc(a.repo)}</a><span class="muted small">@ ${esc(String(at).slice(0, 7))}</span></div>
+    <p class="scan-sum">${esc(a.summary)}</p>
+    ${(a.install_behavior || []).length ? `<div class="scan-run"><div class="tag">Runs automatically when you install or open it</div><ul>${a.install_behavior.map((b) => `<li>${esc(b)}</li>`).join("")}</ul></div>` : ""}
+    ${(a.findings || []).map((f) => `<div class="finding ${esc(f.severity)}"><div class="fh"><span class="sev">${esc(f.severity)}</span><b>${esc(f.what)}</b><a class="loc" href="${esc(fileUrl(f))}" target="_blank">${esc(f.file)}${f.line ? `:${f.line}` : ""}</a></div><div class="small">${esc(f.why)}</div><pre>${esc(f.evidence)}</pre></div>`).join("")}
+    ${(a.binaries || []).length ? `<div class="small" style="margin-top:8px"><b>Executable files in the repo:</b> ${a.binaries.map(esc).join(", ")}</div>` : ""}
+    ${a.next_step ? `<div class="next"><span class="ic">→</span><div><div class="tag" style="color:var(--check)">Before you run anything</div>${esc(a.next_step)}</div></div>` : ""}
+    <div class="meta"><span>${when(e.recorded_at)}</span><span>${a.coverage?.rule_checked ?? 0} files rule-checked · ${a.coverage?.reviewed_by_model ?? 0} reviewed by DeepSeek · nothing executed</span>${saved(e)}</div>
+  </div>`;
 }
 
 // Screenshot -> downscaled JPEG in the browser -> DeepSeek transcribes it -> you review the text before sending.

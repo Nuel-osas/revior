@@ -8,6 +8,7 @@ import { sql } from "./db.js";
 import { generalNamespace, open, opportunityNamespace, seal, sha256 } from "./crypto.js";
 import { archive, archiveStatus, archiveText, compare, explain, extractClaims, operatorMemwal, parseEventId, recallIn, type Claim, type Pair, type Topic } from "./providers.js";
 import { memwalFor } from "./wallet.js";
+import { parseGithubUrl, scanRepo } from "./repo-scan.js";
 
 // Each user's memory lives in their own MemWal account, owned by their custodial wallet.
 const memoryOf = async (userId: string) => (await memwalFor(userId)) ?? operatorMemwal();
@@ -189,6 +190,29 @@ export async function submitMessage(userId: string, oppId: string, text: string,
   await rebuildDetails(userId, oppId);
   if (assessment.next_check) await addOpenCheck(userId, oppId, ev.id, label, assessment.next_check);
   return { event_id: ev.id, source_id: `S${ev.seq}`, claims: extracted.claims, assessment };
+}
+
+// A repo the offer asks you to clone/run: static scan, stored in this offer's memory like any other event.
+export async function submitRepoScan(userId: string, oppId: string, url: string, idem: string, label: string) {
+  const ref = parseGithubUrl(url);
+  if (!ref) throw Object.assign(new Error("paste a public GitHub repository link"), { status: 400 });
+  const scan = await scanRepo(ref).catch((e) => { throw Object.assign(new Error(`Couldn't scan ${ref.owner}/${ref.repo}: ${e?.message ?? e}`), { status: 400 }); });
+  const text = `Repo scan: ${scan.url} (${scan.level.replace(/_/g, " ")})`;
+  const body: EventBody = { source: { text, origin: "user_paste", received_at: new Date().toISOString() }, claims: [], provenance: {} };
+  const ev = await freezeEvent(userId, oppId, "repo_scan", body, idem);
+  if (ev.duplicate) return { duplicate: true, event_id: ev.id };
+  const memo = [
+    `[rv1 ev=${ev.id} S${ev.seq} repo_scan]`,
+    `GitHub repo ${scan.repo} at commit ${scan.commit ?? scan.ref}: ${scan.level.replace(/_/g, " ")}.`,
+    scan.summary,
+    ...scan.install_behavior.map((b: string) => `- runs automatically: ${b}`),
+    ...scan.findings.map((f: any) => `- ${f.severity}: ${f.what} (${f.file}:${f.line ?? "?"})`),
+  ].join("\n");
+  archiveLater(userId, "memory_events", ev.id, memo, opportunityNamespace(userId, oppId));
+  const assessment = { kind: "repo_scan", source_id: `S${ev.seq}`, ...scan };
+  await sql`insert into assessments (opportunity_id, event_id, body_ct) values (${oppId}, ${ev.id}, ${seal(assessment)})`;
+  if (scan.level !== "no_red_flags_found" && scan.next_step) await addOpenCheck(userId, oppId, ev.id, label, `Repo ${scan.repo}: ${scan.next_step}`);
+  return { event_id: ev.id, source_id: `S${ev.seq}`, assessment };
 }
 
 // Corrections never edit history: they append an event and change claim state.

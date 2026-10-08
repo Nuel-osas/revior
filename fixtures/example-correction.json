@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "event_id": "30000000-0000-4000-8000-000000000003",
+  "tenant_id": "10000000-0000-4000-8000-000000000001",
+  "case_id": "20000000-0000-4000-8000-000000000001",
+  "case_sequence": 3,
+  "kind": "user_correction",
+  "recorded_at": "2026-10-07T11:00:00Z",
+  "occurred_at": null,
+  "source": {
+    "label": "S3",
+    "kind": "user_statement",
+    "text": "I pasted the deposit message into the wrong case. Withdraw that interpretation here.",
+    "redacted": false,
+    "claimed_sender": null
+  },
+  "claims": [],
+  "correction": {
+    "action": "withdraw",
+    "target_claim_ids": [
+      "40000000-0000-4000-8000-000000000002"
+    ],
+    "reason": "The user reports that the deposit message belongs to a different offer."
+  },
+  "verification": null,
+  "provenance": {
+    "extractor": "user_confirmed",
+    "requested_model": null,
+    "returned_model": null,
+    "prompt_version": "correction-v1-synthetic-fixture"
+  }
+}

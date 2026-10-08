@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "event_id": "30000000-0000-4000-8000-000000000002",
+  "tenant_id": "10000000-0000-4000-8000-000000000001",
+  "case_id": "20000000-0000-4000-8000-000000000001",
+  "case_sequence": 2,
+  "kind": "source_message",
+  "recorded_at": "2026-10-07T10:00:00Z",
+  "occurred_at": null,
+  "source": {
+    "label": "S2",
+    "kind": "pasted_text",
+    "text": "Send a refundable $60 onboarding deposit today to secure the role.",
+    "redacted": false,
+    "claimed_sender": "Purported recruiter (synthetic example)"
+  },
+  "claims": [
+    {
+      "claim_id": "40000000-0000-4000-8000-000000000002",
+      "topic": "applicant_fee",
+      "statement": "The sender requests a $60 onboarding deposit from the applicant.",
+      "attribution": "source_sender_claim",
+      "evidence": {
+        "quote": "Send a refundable $60 onboarding deposit today to secure the role.",
+        "start": 0,
+        "end": 66
+      }
+    }
+  ],
+  "correction": null,
+  "verification": null,
+  "provenance": {
+    "extractor": "deepseek",
+    "requested_model": "deepseek-flash",
+    "returned_model": null,
+    "prompt_version": "extract-v1-synthetic-fixture"
+  }
+}

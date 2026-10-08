@@ -1,0 +1,30 @@
+{
+  "name": "revior",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@mysten-incubation/memwal": "0.1.8",
+    "@mysten/seal": "^1.4.19",
+    "@mysten/sui": "^2.35.0",
+    "@mysten/walrus": "^1.2.34",
+    "@neondatabase/serverless": "^1.2.0",
+    "@vercel/functions": "^3.9.11",
+    "jose": "^6.2.12"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@vercel/node": "^23.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "db:migrate": "tsx --env-file=.env scripts/migrate.ts",
+    "dev": "tsx --env-file=.env scripts/serve.ts",
+    "typecheck": "tsc --noEmit",
+    "smoke": "tsx --env-file=.env scripts/smoke-memwal.ts"
+  }
+}

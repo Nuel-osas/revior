@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "event_id": "60000000-0000-4000-8000-000000000001",
+  "tenant_id": "10000000-0000-4000-8000-000000000001",
+  "item_id": "70000000-0000-4000-8000-000000000001",
+  "revision": 1,
+  "kind": "open_check_reference",
+  "statement": "In Frontend contract, confirmation of who authorized the applicant deposit is still pending.",
+  "recorded_at": "2026-10-07T10:01:00Z",
+  "supersedes_event_id": null,
+  "source_references": [
+    {
+      "type": "opportunity_event",
+      "case_id": "20000000-0000-4000-8000-000000000001",
+      "event_id": "30000000-0000-4000-8000-000000000002",
+      "claim_id": "40000000-0000-4000-8000-000000000002",
+      "source_revision": 2
+    }
+  ]
+}

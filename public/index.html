@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Revior</title>
+<meta name="description" content="Revior remembers how a job or collaboration offer changes across messages and shows what to verify before your next step." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #fff; --ink: #111827; --muted: #6b7280; --line: #e5e7eb;
+    --accent: #4338ca; --accent-soft: #eef2ff; --warn: #b45309; --warn-soft: #fef3c7;
+    --bad: #b91c1c; --bad-soft: #fee2e2; --good: #047857; --good-soft: #d1fae5;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  button { font: 600 14px Inter, sans-serif; border: 0; border-radius: 8px; padding: 8px 13px; background: var(--accent); color: #fff; cursor: pointer; }
+  button.ghost { background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
+  button.link { background: none; color: var(--accent); padding: 2px 4px; font-weight: 500; }
+  button:disabled { opacity: .55; cursor: wait; }
+  input, textarea { font: inherit; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; background: #fff; color: var(--ink); }
+  textarea { resize: vertical; min-height: 64px; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  a { color: var(--accent); }
+  .center { max-width: 520px; margin: 10vh auto; padding: 0 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 26px; }
+  .brand { font-weight: 700; font-size: 20px; letter-spacing: -.01em; }
+  .brand span { color: var(--accent); }
+  .lead { color: var(--muted); margin: 6px 0 20px; }
+  .gbtn { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: var(--ink); border: 1px solid var(--line); padding: 11px 16px; }
+  .fine { font-size: 12.5px; color: var(--muted); }
+  /* app shell */
+  .app { display: grid; grid-template-columns: 260px minmax(0, 1fr) 340px; height: 100vh; }
+  aside, .right { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; }
+  .right { border-right: 0; border-left: 1px solid var(--line); }
+  aside header, .right header { padding: 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .opp { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .opp:hover { background: #fafafa; }
+  .opp.sel { background: var(--accent-soft); }
+  .opp b { display: block; font-weight: 600; }
+  .opp small { color: var(--muted); }
+  .pill { display: inline-block; font: 600 11px var(--mono); padding: 2px 7px; border-radius: 999px; background: #f3f4f6; color: var(--muted); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.good { background: var(--good-soft); color: var(--good); }
+  main { display: flex; flex-direction: column; min-height: 0; }
+  main > header { padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  main > header h2 { margin: 0; font-size: 17px; flex: 1; }
+  #thread { flex: 1; overflow-y: auto; padding: 18px 20px; }
+  .src { margin: 0 0 6px auto; max-width: 78%; background: var(--accent); color: #fff; padding: 10px 13px; border-radius: 14px 14px 4px 14px; white-space: pre-wrap; word-wrap: break-word; }
+  .srcmeta { text-align: right; font: 11.5px var(--mono); color: var(--muted); margin-bottom: 14px; }
+  .ans { max-width: 88%; background: var(--panel); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 14px 16px; margin-bottom: 22px; }
+  .ans h4 { margin: 0 0 8px; font-size: 15px; }
+  .change { border-left: 3px solid var(--bad); background: #fffafa; padding: 8px 10px; border-radius: 0 8px 8px 0; margin: 8px 0; }
+  .change.change-kind { border-color: var(--warn); background: #fffdf6; }
+  .lbl { font: 600 11px var(--mono); text-transform: uppercase; color: var(--muted); letter-spacing: .03em; }
+  .q { font-style: italic; color: #374151; }
+  .chip { font: 600 11px var(--mono); color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 6px; cursor: pointer; }
+  .next { margin-top: 10px; background: var(--good-soft); color: #064e3b; padding: 9px 11px; border-radius: 8px; }
+  .unknown { margin-top: 8px; color: #374151; }
+  details.trace { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+  details.trace summary { cursor: pointer; }
+  .jev { font-family: var(--mono); font-size: 12px; margin: 3px 0; }
+  .bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--accent); vertical-align: middle; margin-right: 6px; }
+  .composer { padding: 12px 20px 16px; border-top: 1px solid var(--line); background: var(--panel); }
+  .composer .row { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
+  .composer .row .fine { flex: 1; }
+  .empty { color: var(--muted); padding: 30px 10px; text-align: center; }
+  .topic { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .topic .t { font: 600 12px var(--mono); text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
+  .topic .cur { margin-top: 4px; }
+  .topic .hist { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .topic .hist s { color: #9ca3af; }
+  .save { font: 11.5px var(--mono); }
+  .modal { position: fixed; inset: 0; background: rgba(17,24,39,.45); display: none; align-items: flex-start; justify-content: center; padding-top: 10vh; z-index: 10; }
+  .modal.open { display: flex; }
+  .modal .card { width: min(560px, 92vw); max-height: 75vh; overflow-y: auto; }
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 9px 14px; border-radius: 8px; font-size: 13.5px; display: none; z-index: 20; }
+  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: s .8s linear infinite; vertical-align: -1px; }
+  @keyframes s { to { transform: rotate(360deg); } }
+  @media (max-width: 1000px) { .app { grid-template-columns: 1fr; height: auto; } aside, .right { border: 0; } #thread { max-height: 60vh; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="modal" id="modal"><div class="card" id="modalBody"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const when = (d) => new Date(d).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const TOPIC = { payment_or_fee: "Payments & fees", compensation: "Compensation", role_or_company: "Role & company", contact_or_identity: "Contacts", communication_channel: "Channel", onboarding_process: "Onboarding", documents_or_credentials: "Documents & credentials", schedule_or_deadline: "Deadlines", other: "Other" };
+let me = null, opps = [], current = null, poll = null;
+
+function toast(t) { const el = $("#toast"); el.textContent = t; el.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => (el.style.display = "none"), 3500); }
+async function api(path, body) {
+  const r = await fetch("/api/" + path, body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json", "x-revior": "1" }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { renderSignIn(); throw new Error("Please sign in"); }
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+function modal(html) { $("#modalBody").innerHTML = html; $("#modal").classList.add("open"); }
+function closeModal() { $("#modal").classList.remove("open"); }
+$("#modal").onclick = (e) => { if (e.target.id === "modal") closeModal(); };
+
+// ---------- sign in & consent ----------
+function renderSignIn() {
+  const err = new URLSearchParams(location.search).get("error");
+  $("#root").innerHTML = `
+    <div class="center"><div class="card">
+      <div class="brand">Revi<span>or</span></div>
+      <p class="lead">A second look at every job or collaboration offer. Paste each new message as the conversation goes on. Revior remembers what you were told before, and shows you what changed and what to verify next.</p>
+      ${err ? `<p class="fine" style="color:var(--bad)">${esc(err)}</p>` : ""}
+      <a href="/auth/google/start"><button class="gbtn"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button></a>
+      <p class="fine" style="margin-top:18px">Sign-in only identifies you. Revior does not read your Gmail. It never tells you an offer is "safe" or a "scam": it shows what changed, with sources, so you can decide.</p>
+    </div></div>`;
+}
+
+function renderConsent() {
+  $("#root").innerHTML = `
+    <div class="center"><div class="card">
+      <div class="brand">Before you start</div>
+      <p class="lead">Information you choose to analyze is processed by Revior, DeepSeek, Jev (TypeSafe) and the Walrus Memory service. Saved content is encrypted on Walrus, but these services can process the text. Revior operates the memory account. You can inspect or correct saved information and close or forget an opportunity.</p>
+      <p class="lead"><b>Remove passwords, one-time codes, private keys and ID documents</b> before pasting a message.</p>
+      <button id="ok">Continue</button> <button class="ghost" id="no">Sign out</button>
+    </div></div>`;
+  $("#ok").onclick = async () => { await api("consent", {}); boot(); };
+  $("#no").onclick = async () => { await api("signout", {}); location.href = "/"; };
+}
+
+// ---------- app ----------
+async function boot() {
+  try { me = await api("me"); } catch { return renderSignIn(); }
+  if (!me.consent) return renderConsent();
+  $("#root").innerHTML = `
+    <div class="app">
+      <aside>
+        <header><div class="brand">Revi<span>or</span></div><button id="addBtn">+ Add</button></header>
+        <div id="oppList"></div>
+        <div style="padding:14px 16px" class="fine">
+          <button class="link" id="memBtn">My memory</button> · <button class="link" id="outBtn">Sign out</button><br/>
+          ${esc(me.user.email || me.user.name)}
+        </div>
+      </aside>
+      <main id="main"><div class="empty" style="margin-top:20vh">Add an opportunity to start. One per offer or conversation.</div></main>
+      <section class="right" id="right"><header><b>Current details</b></header><div class="empty">Details appear as you add messages.</div></section>
+    </div>`;
+  $("#addBtn").onclick = addOpportunity;
+  $("#memBtn").onclick = showMemory;
+  $("#outBtn").onclick = async () => { await api("signout", {}); location.href = "/"; };
+  await loadOpps();
+  if (opps[0]) openOpp(opps[0].id); else addOpportunity();
+}
+
+async function loadOpps() {
+  opps = await api("opportunities");
+  $("#oppList").innerHTML = opps.length ? opps.map((o) => `
+    <div class="opp ${current?.id === o.id ? "sel" : ""}" data-id="${o.id}">
+      <b>${esc(o.label)}</b>
+      <small>${o.events} update${o.events === 1 ? "" : "s"} · ${when(o.last_activity_at)}</small>
+      ${o.conflicts ? `<div><span class="pill bad">${o.conflicts} changed condition${o.conflicts === 1 ? "" : "s"}</span></div>` : ""}
+      ${o.status === "closed" ? `<div><span class="pill">closed</span></div>` : ""}
+    </div>`).join("") : `<div class="empty">No opportunities yet.</div>`;
+  document.querySelectorAll(".opp").forEach((el) => (el.onclick = () => openOpp(el.dataset.id)));
+}
+
+function addOpportunity() {
+  modal(`<h3 style="margin-top:0">New opportunity</h3>
+    <p class="fine">Name it so you recognise it, e.g. "Frontend contract, Northstar" or "Web3 collab via Telegram".</p>
+    <input id="lbl" placeholder="Opportunity name" maxlength="80" />
+    <div style="margin-top:12px;display:flex;gap:8px"><button id="mk">Create</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+  $("#lbl").focus();
+  const go = async () => {
+    const label = $("#lbl").value.trim(); if (!label) return;
+    try { const o = await api("opportunities", { label }); closeModal(); await loadOpps(); openOpp(o.id); } catch (e) { toast(e.message); }
+  };
+  $("#mk").onclick = go; $("#lbl").onkeydown = (e) => { if (e.key === "Enter") go(); };
+}
+
+async function openOpp(id) {
+  clearInterval(poll);
+  current = await api(`opportunity?id=${encodeURIComponent(id)}`);
+  document.querySelectorAll(".opp").forEach((el) => el.classList.toggle("sel", el.dataset.id === id));
+  renderOpp();
+  if (current.timeline.some((e) => e.archive_status === "pending")) poll = setInterval(refreshArchive, 5000);
+}
+
+function saveBadge(e) {
+  if (e.archive_status === "done") return `<span class="save" style="color:var(--good)">saved on Walrus · <a href="https://walruscan.com/mainnet/blob/${esc(e.blob_id)}" target="_blank">${esc(e.blob_id.slice(0, 10))}…</a></span>`;
+  if (e.archive_status === "failed") return `<span class="save" style="color:var(--bad)">saving to Walrus failed</span>`;
+  return `<span class="save"><span class="spin"></span> saving to Walrus…</span>`;
+}
+
+function renderAssessment(a) {
+  if (!a) return "";
+  const changes = (a.changes || []).map((c) => `
+    <div class="change ${c.relation === "change" ? "change-kind" : ""}">
+      <div class="lbl">${c.relation === "contradiction" ? "Changed condition" : "New or altered condition"} · <span class="chip" data-src="${esc(c.prior)}">${esc(c.prior)}</span> → <span class="chip" data-src="${esc(c.current)}">${esc(c.current)}</span></div>
+      <div>${esc(c.what)}</div>
+    </div>`).join("");
+  const notes = (a.notes || []).map((n) => `<div style="margin:6px 0">${esc(n.text)} ${(n.sources || []).map((s) => `<span class="chip" data-src="${esc(s)}">${esc(s)}</span>`).join(" ")}</div>`).join("");
+  const jev = (a.jev || []).map((j) => {
+    const p = j.probabilities?.[j.choice] ?? 0;
+    return `<div class="jev"><span class="bar" style="width:${Math.round(p * 60)}px"></span>${esc(j.pair.prior.source)} → ${esc(j.pair.current.source)} · ${esc(j.pair.topic)} · <b>${esc(j.choice)}</b> ${p.toFixed(2)}<br/><span style="margin-left:66px">"${esc(j.pair.prior.quote)}" vs "${esc(j.pair.current.quote)}"</span></div>`;
+  }).join("");
+  return `<div class="ans">
+    <h4>${esc(a.headline)}</h4>
+    ${changes}${notes}
+    ${a.unknown ? `<div class="unknown"><span class="lbl">Still unknown</span><br/>${esc(a.unknown)}</div>` : ""}
+    ${a.next_check ? `<div class="next"><span class="lbl" style="color:#065f46">Next check</span><br/>${esc(a.next_check)}</div>` : ""}
+    <details class="trace"><summary>How this was decided: ${a.recall?.recalled_events ?? 0} earlier message${a.recall?.recalled_events === 1 ? "" : "s"} recalled from Walrus Memory · ${(a.jev || []).length} comparison${(a.jev || []).length === 1 ? "" : "s"} by Jev</summary>
+      ${jev || `<div class="jev">No earlier claims to compare yet.</div>`}
+      ${a.jev_error ? `<div class="jev" style="color:var(--bad)">${esc(a.jev_error)}</div>` : ""}
+      ${a.recall?.error ? `<div class="jev" style="color:var(--bad)">Recall unavailable: comparison may be incomplete.</div>` : ""}
+      <div class="jev">${esc(a.models?.explainer?.returned || "")} · ${esc(a.jev_model || "")}</div>
+    </details>
+  </div>`;
+}
+
+function renderOpp() {
+  const o = current;
+  const closed = o.status === "closed";
+  $("#main").innerHTML = `
+    <header>
+      <h2>${esc(o.label)}</h2>
+      <button class="ghost" id="stBtn">${closed ? "Reopen" : "Close"}</button>
+      <button class="ghost" id="fgBtn">Forget</button>
+    </header>
+    <div id="thread">${o.timeline.length ? "" : `<div class="empty">Paste the first message you received about this opportunity. Then come back and paste each new message as the conversation goes on.</div>`}
+      ${o.timeline.map((e) => e.kind === "source_message" ? `
+        <div class="src" id="src-${esc(e.source_id)}">${esc(e.text)}</div>
+        <div class="srcmeta">${esc(e.source_id)} · ${when(e.recorded_at)} · ${saveBadge(e)}</div>
+        ${renderAssessment(e.assessment)}` : `
+        <div class="srcmeta" style="text-align:left">${esc(e.source_id)} · correction · ${esc(e.text)} · ${saveBadge(e)}</div>`).join("")}
+    </div>
+    <div class="composer">
+      ${closed ? `<div class="fine">This opportunity is closed. Reopen it to add updates.</div>` : `
+      <textarea id="msg" placeholder="Paste the latest message from them, exactly as you received it..."></textarea>
+      <div class="row"><span class="fine">Revior compares it with everything earlier in this opportunity. Remove codes, passwords and ID numbers first.</span><button id="send">Add update</button></div>`}
+    </div>`;
+  const th = $("#thread"); th.scrollTop = th.scrollHeight;
+  th.querySelectorAll(".chip").forEach((c) => (c.onclick = () => $("#src-" + c.dataset.src)?.scrollIntoView({ behavior: "smooth", block: "center" })));
+  $("#stBtn").onclick = async () => { await api("status", { id: o.id, status: closed ? "active" : "closed" }); await loadOpps(); openOpp(o.id); };
+  $("#fgBtn").onclick = () => modal(`<h3 style="margin-top:0">Forget "${esc(o.label)}"?</h3>
+      <p class="fine">Revior immediately stops using this opportunity and its derived memory items. Removal of the encrypted Walrus copies is a separate step that is still pending in this version, and it cannot erase copies held by the original messaging service.</p>
+      <div style="display:flex;gap:8px"><button id="fgYes" style="background:var(--bad)">Forget</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`) || ($("#fgYes").onclick = async () => { await api("forget", { id: o.id }); closeModal(); current = null; await loadOpps(); opps[0] ? openOpp(opps[0].id) : boot(); });
+  if (!closed) { $("#send").onclick = send; $("#msg").onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }; $("#msg").focus(); }
+  renderDetails();
+}
+
+function renderDetails() {
+  const d = current.details || {};
+  const keys = Object.keys(TOPIC).filter((k) => d[k]);
+  $("#right").innerHTML = `<header><b>Current details</b><span class="fine">from ${current.timeline.length} source${current.timeline.length === 1 ? "" : "s"}</span></header>` + (keys.length ? keys.map((k) => {
+    const t = d[k];
+    const hist = t.history.filter((h) => h.claim_id !== t.current?.claim_id);
+    return `<div class="topic">
+      <div class="t"><span>${TOPIC[k]}</span>${t.state === "conflicting_claims" ? `<span class="pill bad">changed</span>` : ""}</div>
+      ${t.current ? `<div class="cur">${esc(t.current.statement)} <span class="chip" data-src="${esc(t.current.source)}">${esc(t.current.source)}</span>${t.current.requested_action ? ` <span class="pill warn">asks you to act</span>` : ""}
+        <button class="link" data-fix="${esc(t.current.claim_id)}">correct</button></div>` : ""}
+      ${hist.map((h) => `<div class="hist">${h.state === "superseded" || h.state === "withdrawn" ? `<s>${esc(h.statement)}</s> (${h.state})` : `${h.state === "disputed" ? "Earlier: " : ""}${esc(h.statement)}`} <span class="chip" data-src="${esc(h.source)}">${esc(h.source)}</span>${h.state === "active" || h.state === "disputed" ? ` <button class="link" data-fix="${esc(h.claim_id)}">correct</button>` : ""}</div>`).join("")}
+    </div>`;
+  }).join("") : `<div class="empty">Details appear as you add messages.</div>`);
+  $("#right").querySelectorAll(".chip").forEach((c) => (c.onclick = () => $("#src-" + c.dataset.src)?.scrollIntoView({ behavior: "smooth", block: "center" })));
+  $("#right").querySelectorAll("[data-fix]").forEach((b) => (b.onclick = () => correct(b.dataset.fix)));
+}
+
+function correct(claimId) {
+  modal(`<h3 style="margin-top:0">Correct this reading</h3>
+    <p class="fine">Your correction is added to the history. The original message is never edited.</p>
+    <textarea id="fix" placeholder="What it actually says, e.g. 'The company pays the equipment deposit, not me.'"></textarea>
+    <div style="margin-top:12px;display:flex;gap:8px"><button id="fixGo">Save correction</button><button class="ghost" id="wd">It doesn't say this at all</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+  const go = async (action) => {
+    try { await api("correct", { id: current.id, claim_id: claimId, action, replacement: action === "replace" ? $("#fix").value.trim() : "", idem: crypto.randomUUID() }); closeModal(); toast("Correction saved"); openOpp(current.id); }
+    catch (e) { toast(e.message); }
+  };
+  $("#fixGo").onclick = () => $("#fix").value.trim() && go("replace");
+  $("#wd").onclick = () => go("withdraw");
+}
+
+async function send() {
+  const text = $("#msg").value.trim(); if (!text) return;
+  const btn = $("#send"); btn.disabled = true;
+  const th = $("#thread");
+  th.querySelector(".empty")?.remove();
+  th.insertAdjacentHTML("beforeend", `<div class="src">${esc(text)}</div><div class="ans" id="pending"><span class="spin"></span> Reading the message, recalling what they told you before, comparing…</div>`);
+  th.scrollTop = th.scrollHeight;
+  $("#msg").value = "";
+  try {
+    await api("message", { id: current.id, text, idem: crypto.randomUUID() });
+    await loadOpps(); await openOpp(current.id);
+  } catch (e) {
+    $("#pending").innerHTML = `Couldn't analyze this: ${esc(e.message)}`; $("#msg").value = text;
+  } finally { btn.disabled = false; }
+}
+
+async function refreshArchive() {
+  if (!current) return clearInterval(poll);
+  const fresh = await api(`opportunity?id=${encodeURIComponent(current.id)}`).catch(() => null);
+  if (!fresh) return;
+  const changed = fresh.timeline.some((e, i) => e.archive_status !== current.timeline[i]?.archive_status);
+  current = fresh;
+  if (changed) { const th = $("#thread"); const y = th.scrollTop; renderOpp(); $("#thread").scrollTop = y; }
+  if (!fresh.timeline.some((e) => e.archive_status === "pending")) clearInterval(poll);
+}
+
+async function showMemory() {
+  modal(`<h3 style="margin-top:0">My memory</h3><p class="fine"><span class="spin"></span> loading…</p>`);
+  const items = await api("memory");
+  modal(`<h3 style="margin-top:0">My memory</h3>
+    <p class="fine">What Revior keeps across your opportunities. Each item links back to where it came from, and is stored encrypted in your private memory on Walrus.</p>
+    ${items.length ? items.map((i) => `<div style="border-top:1px solid var(--line);padding:10px 0">${esc(i.statement)}<br/><span class="fine">${when(i.created_at)} · ${i.archive_status === "done" ? `saved on Walrus · <a href="https://walruscan.com/mainnet/blob/${esc(i.blob_id)}" target="_blank">${esc(i.blob_id.slice(0, 10))}…</a>` : esc(i.archive_status)} · <button class="link" data-o="${esc(i.opportunity_id)}">open</button></span></div>`).join("") : `<p class="empty">Nothing yet.</p>`}
+    <button class="ghost" onclick="closeModal()">Close</button>`);
+  document.querySelectorAll("[data-o]").forEach((b) => (b.onclick = () => { closeModal(); openOpp(b.dataset.o); }));
+}
+
+boot();
+</script>
+</body>
+</html>

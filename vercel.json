@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/auth/google/start", "destination": "/api/router?path=auth/start" },
+    { "source": "/auth/google/callback", "destination": "/api/router?path=auth/callback" },
+    { "source": "/api/:path((?!router).*)", "destination": "/api/router?path=:path" }
+  ]
+}

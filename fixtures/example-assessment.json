@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "assessment_id": "50000000-0000-4000-8000-000000000001",
+  "case_id": "20000000-0000-4000-8000-000000000001",
+  "input_event_id": "30000000-0000-4000-8000-000000000002",
+  "disposition": "change_detected",
+  "completeness": "complete_for_selected_claims",
+  "observations": [
+    {
+      "kind": "contradiction",
+      "text": "The new applicant deposit request changes the earlier no-fee condition.",
+      "sources": [
+        {
+          "event_id": "30000000-0000-4000-8000-000000000001",
+          "claim_id": "40000000-0000-4000-8000-000000000001",
+          "quote": "Applicants pay no fees."
+        },
+        {
+          "event_id": "30000000-0000-4000-8000-000000000002",
+          "claim_id": "40000000-0000-4000-8000-000000000002",
+          "quote": "Send a refundable $60 onboarding deposit today to secure the role."
+        }
+      ]
+    }
+  ],
+  "unknowns": [
+    "Who authorized the deposit request?"
+  ],
+  "next_check": {
+    "action": "Pause payment and confirm the request through a company contact you find independently.",
+    "reason": "The request conflicts with the earlier stated condition."
+  },
+  "limitations": [
+    "The messages do not establish the sender's identity or the legitimacy of the offer."
+  ],
+  "general_context": []
+}

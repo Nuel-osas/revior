@@ -3,11 +3,14 @@ import { randomUUID } from "node:crypto";
 import { sql } from "../lib/db.js";
 import { seal } from "../lib/crypto.js";
 import { submitMessage } from "../lib/pipeline.js";
+import { provisionWallet } from "../lib/wallet.js";
 
 const [u] = await sql`insert into users (google_iss, google_sub, profile_ct, consent_version, consent_at) values ('test', ${"e2e-" + Date.now()}, ${seal({ name: "E2E test" })}, 1, now()) returning id`;
 const label = "Frontend contract (synthetic)";
 const [o] = await sql`insert into opportunities (user_id, label_ct) values (${u.id}, ${seal(label)}) returning id`;
 console.log("user", u.id, "opp", o.id);
+const w = await provisionWallet(u.id);
+console.log("wallet", w?.address, "memwal account", w?.memwal_account_id);
 
 const r1 = await submitMessage(u.id, o.id, "Hi, we're Northstar Labs. The contract pays $1,500 monthly. Applicants pay no fees. Onboarding happens only through our careers portal.", randomUUID(), label);
 console.log("S1:", r1.assessment?.headline, "| next:", r1.assessment?.next_check, "| ms", JSON.stringify(r1.assessment?.timings_ms));

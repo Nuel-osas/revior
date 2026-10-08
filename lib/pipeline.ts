@@ -6,7 +6,11 @@ import { randomUUID } from "node:crypto";
 import { waitUntil } from "@vercel/functions";
 import { sql } from "./db.js";
 import { generalNamespace, open, opportunityNamespace, seal, sha256 } from "./crypto.js";
-import { archive, archiveStatus, archiveText, compare, explain, extractClaims, parseEventId, recallIn, type Claim, type Pair, type Topic } from "./providers.js";
+import { archive, archiveStatus, archiveText, compare, explain, extractClaims, operatorMemwal, parseEventId, recallIn, type Claim, type Pair, type Topic } from "./providers.js";
+import { memwalFor } from "./wallet.js";
+
+// Each user's memory lives in their own MemWal account, owned by their custodial wallet.
+const memoryOf = async (userId: string) => (await memwalFor(userId)) ?? operatorMemwal();
 
 type EventBody = {
   source: { text: string; origin: "user_paste"; received_at: string };
@@ -42,17 +46,18 @@ async function confirmedEvents(oppId: string): Promise<{ id: string; seq: number
 }
 
 // Archive in the background and record confirmation only on a terminal "done" with a blob id.
-function archiveLater(table: "memory_events" | "general_memory_items", rowId: string, text: string, namespace: string) {
+function archiveLater(userId: string, table: "memory_events" | "general_memory_items", rowId: string, text: string, namespace: string) {
   waitUntil(
     (async () => {
       try {
-        const jobId = await archive(text, namespace);
+        const mw = await memoryOf(userId);
+        const jobId = await archive(mw, text, namespace);
         if (table === "memory_events") await sql`update memory_events set memwal_job_id = ${jobId} where id = ${rowId}`;
         else await sql`update general_memory_items set memwal_job_id = ${jobId} where id = ${rowId}`;
         const t0 = Date.now();
         while (Date.now() - t0 < 240_000) {
           await new Promise((r) => setTimeout(r, 2500));
-          const s = await archiveStatus(jobId);
+          const s = await archiveStatus(mw, jobId);
           if (s.status === "done" && s.blob_id) {
             if (table === "memory_events") await sql`update memory_events set archive_status = 'done', blob_id = ${s.blob_id} where id = ${rowId}`;
             else await sql`update general_memory_items set archive_status = 'done', blob_id = ${s.blob_id} where id = ${rowId}`;
@@ -89,7 +94,7 @@ export async function submitMessage(userId: string, oppId: string, text: string,
   const ev = await freezeEvent(userId, oppId, "source_message", body, idem);
   if (ev.duplicate) return { duplicate: true, event_id: ev.id };
   const ns = opportunityNamespace(userId, oppId);
-  archiveLater("memory_events", ev.id, archiveText(ev.id, ev.seq, "source_message", text, extracted.claims), ns);
+  archiveLater(userId, "memory_events", ev.id, archiveText(ev.id, ev.seq, "source_message", text, extracted.claims), ns);
   const tExtract = Date.now();
 
   // ---- earlier evidence: MemWal recall (semantic) + confirmed projection (deterministic) ----
@@ -100,7 +105,7 @@ export async function submitMessage(userId: string, oppId: string, text: string,
   if (events.length) {
     try {
       const query = extracted.claims.map((c) => c.statement).join("; ") || text.slice(0, 500);
-      const hits = await recallIn(ns, query, 8);
+      const hits = await recallIn(await memoryOf(userId), ns, query, 8);
       // Accept a recalled memory only if it parses to an event of THIS opportunity.
       const known = new Set(events.map((e) => e.id));
       recalledIds = new Set(hits.map((h) => parseEventId(h.text)).filter((id): id is string => !!id && known.has(id)));
@@ -184,7 +189,7 @@ export async function submitCorrection(userId: string, oppId: string, claimId: s
   };
   const ev = await freezeEvent(userId, oppId, "user_correction", body, idem);
   await sql`update claim_states set state = ${action === "replace" ? "superseded" : "withdrawn"}, superseded_by = ${ev.id} where claim_id = ${claimId}`;
-  archiveLater("memory_events", ev.id, archiveText(ev.id, ev.seq, "user_correction", `Correction of ${claimId}: ${replacement || "withdrawn"}`, claims), opportunityNamespace(userId, oppId));
+  archiveLater(userId, "memory_events", ev.id, archiveText(ev.id, ev.seq, "user_correction", `Correction of ${claimId}: ${replacement || "withdrawn"}`, claims), opportunityNamespace(userId, oppId));
   await rebuildDetails(userId, oppId);
   return { event_id: ev.id, source_id: `S${ev.seq}` };
 }
@@ -214,5 +219,5 @@ async function addOpenCheck(userId: string, oppId: string, eventId: string, labe
   const statement = `Open check in "${label}": ${check}`;
   const id = randomUUID();
   await sql`insert into general_memory_items (id, user_id, kind, statement_ct, status, source_opportunity_id, source_event_id) values (${id}, ${userId}, 'open_check', ${seal(statement)}, 'active', ${oppId}, ${eventId})`;
-  archiveLater("general_memory_items", id, `[rv1 gm=${id} open_check] ${statement}`, generalNamespace(userId));
+  archiveLater(userId, "general_memory_items", id, `[rv1 gm=${id} open_check] ${statement}`, generalNamespace(userId));
 }

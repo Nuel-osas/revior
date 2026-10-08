@@ -6,6 +6,7 @@ import { cfg } from "../lib/config.js";
 import { open, seal } from "../lib/crypto.js";
 import { sql } from "../lib/db.js";
 import { loadOpportunity, rebuildDetails, submitCorrection, submitMessage } from "../lib/pipeline.js";
+import { exportWallet, provisionWallet, publicView, walletFor } from "../lib/wallet.js";
 
 export const config = { maxDuration: 300 };
 
@@ -38,12 +39,13 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
   if (path === "me") {
     const [u] = await sql`select profile_ct, consent_version from users where id = ${userId}`;
     if (!u) throw Object.assign(new Error("not signed in"), { status: 401 });
-    return res.json({ user: open(u.profile_ct), consent: u.consent_version === cfg.consentVersion });
+    return res.json({ user: open(u.profile_ct), consent: u.consent_version === cfg.consentVersion, wallet: publicView(await walletFor(userId)) });
   }
   if (path === "signout") { signOut(res); return res.json({ ok: true }); }
   if (path === "consent" && m === "POST") {
     await sql`update users set consent_version = ${cfg.consentVersion}, consent_at = now() where id = ${userId}`;
-    return res.json({ ok: true });
+    // Zentos-style: the user's own Sui wallet and MemWal account, gas sponsored.
+    return res.json({ ok: true, wallet: await provisionWallet(userId) });
   }
   const [consented] = await sql`select 1 from users where id = ${userId} and consent_version = ${cfg.consentVersion}`;
   if (!consented) throw Object.assign(new Error("accept the processing notice first"), { status: 403 });
@@ -85,6 +87,8 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
   if (path === "message" && m === "POST") {
     const o = await loadOpportunity(userId, String(b.id));
     if (o.status !== "active") throw Object.assign(new Error("reopen this opportunity to add updates"), { status: 400 });
+    const [real] = await sql`select google_iss <> 'test' as real from users where id = ${userId}`;
+    if (real?.real && (await walletFor(userId))?.status !== "ready") await provisionWallet(userId);
     const text = String(b.text ?? "").trim();
     if (!text) throw Object.assign(new Error("paste the message text"), { status: 400 });
     if (cp(text) > cfg.maxSource) throw Object.assign(new Error(`too long: keep it under ${cfg.maxSource} characters`), { status: 400 });
@@ -114,6 +118,15 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
                            from general_memory_items g join opportunities o on o.id = g.source_opportunity_id
                            where g.user_id = ${userId} and g.status = 'active' and o.status <> 'excluded' order by g.created_at desc limit 50`;
     return res.json(rows.map((r) => ({ id: r.id, kind: r.kind, statement: open(r.statement_ct), archive_status: r.archive_status, blob_id: r.blob_id, created_at: r.created_at, opportunity_id: r.source_opportunity_id })));
+  }
+  if (path === "wallet" && m === "GET") {
+    const w = await walletFor(userId);
+    return res.json(w?.status === "ready" ? publicView(w) : publicView(w) ?? { status: "none" });
+  }
+  if (path === "wallet/provision" && m === "POST") return res.json(await provisionWallet(userId));
+  if (path === "wallet/export" && m === "POST") {
+    if (b.confirm !== "export") throw Object.assign(new Error("confirmation required"), { status: 400 });
+    return res.json(await exportWallet(userId));
   }
   if (path === "rebuild" && m === "POST") return res.json(await rebuildDetails(userId, (await loadOpportunity(userId, String(b.id))).id));
   throw Object.assign(new Error("not found"), { status: 404 });

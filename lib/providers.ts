@@ -131,23 +131,24 @@ export async function compare(pairs: Pair[]): Promise<{ results: JevResult[]; mo
 }
 
 // ---------- MemWal (Mainnet) ----------
+// Operator account: only for users created before custodial wallets (and synthetic tests).
 let _mw: MemWal | null = null;
-const mw = () => (_mw ??= MemWal.create({ key: cfg.memwal.key, accountId: cfg.memwal.account, serverUrl: cfg.memwal.url }));
+export const operatorMemwal = () => (_mw ??= MemWal.create({ key: cfg.memwal.key, accountId: cfg.memwal.account, serverUrl: cfg.memwal.url }));
 
 // Archived text: a header the app can parse back to a confirmed event, then the human-readable source and claims.
 export const archiveText = (eventId: string, seq: number, kind: string, source: string, claims: Claim[]) =>
   [`[rv1 ev=${eventId} S${seq} ${kind}]`, source, ...claims.map((c) => `- ${c.topic}: ${c.statement}`)].join("\n");
 export const parseEventId = (text: string) => text.match(/^\[rv1 ev=([0-9a-f-]{36}) /)?.[1] ?? null;
 
-export async function archive(text: string, namespace: string) {
-  const job = await mw().rememberAsync(text, namespace);
+export async function archive(mw: MemWal, text: string, namespace: string) {
+  const job = await mw.rememberAsync(text, namespace);
   return job.job_id as string;
 }
-export async function archiveStatus(jobId: string) {
-  const s: any = await mw().getRememberStatus(jobId);
+export async function archiveStatus(mw: MemWal, jobId: string) {
+  const s: any = await mw.getRememberStatus(jobId);
   return { status: String(s.status), blob_id: (s.blob_id as string | undefined) ?? null };
 }
-export async function recallIn(namespace: string, query: string, limit = 8) {
-  const r = await mw().recall({ query, limit, namespace, maxTokens: 6000 });
+export async function recallIn(mw: MemWal, namespace: string, query: string, limit = 8) {
+  const r = await mw.recall({ query, limit, namespace, maxTokens: 6000 });
   return r.results;
 }

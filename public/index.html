@@ -127,9 +127,15 @@ function renderConsent() {
       <div class="brand">Before you start</div>
       <p class="lead">Information you choose to analyze is processed by Revior, DeepSeek, Jev (TypeSafe) and the Walrus Memory service. Saved content is encrypted on Walrus, but these services can process the text. Revior operates the memory account. You can inspect or correct saved information and close or forget an opportunity.</p>
       <p class="lead"><b>Remove passwords, one-time codes, private keys and ID documents</b> before pasting a message.</p>
+      <p class="lead">Continuing creates <b>your own Sui wallet</b> and a Walrus Memory account it owns, so your memories belong to you, not to Revior. Setup fees are sponsored. You can export the wallet at any time.</p>
       <button id="ok">Continue</button> <button class="ghost" id="no">Sign out</button>
     </div></div>`;
-  $("#ok").onclick = async () => { await api("consent", {}); boot(); };
+  $("#ok").onclick = async () => {
+    $("#ok").disabled = true;
+    $("#ok").innerHTML = `<span class="spin"></span> Creating your Sui wallet and memory account…`;
+    try { await api("consent", {}); } catch (e) { toast("Wallet setup will retry on your first update: " + e.message); }
+    boot();
+  };
   $("#no").onclick = async () => { await api("signout", {}); location.href = "/"; };
 }
 
@@ -143,8 +149,9 @@ async function boot() {
         <header><div class="brand">Revi<span>or</span></div><button id="addBtn">+ Add</button></header>
         <div id="oppList"></div>
         <div style="padding:14px 16px" class="fine">
-          <button class="link" id="memBtn">My memory</button> · <button class="link" id="outBtn">Sign out</button><br/>
-          ${esc(me.user.email || me.user.name)}
+          <button class="link" id="memBtn">My memory</button> · <button class="link" id="walBtn">My wallet</button> · <button class="link" id="outBtn">Sign out</button><br/>
+          ${esc(me.user.email || me.user.name)}<br/>
+          ${me.wallet?.status === "ready" ? `<a href="https://suiscan.xyz/mainnet/account/${esc(me.wallet.address)}" target="_blank" class="pill good" style="text-decoration:none">wallet ${esc(me.wallet.address.slice(0, 6))}…${esc(me.wallet.address.slice(-4))}</a>` : `<span class="pill warn">wallet ${esc(me.wallet?.status || "not created")}</span>`}
         </div>
       </aside>
       <main id="main"><div class="empty" style="margin-top:20vh">Add an opportunity to start. One per offer or conversation.</div></main>
@@ -152,6 +159,7 @@ async function boot() {
     </div>`;
   $("#addBtn").onclick = addOpportunity;
   $("#memBtn").onclick = showMemory;
+  $("#walBtn").onclick = showWallet;
   $("#outBtn").onclick = async () => { await api("signout", {}); location.href = "/"; };
   await loadOpps();
   if (opps[0]) openOpp(opps[0].id); else addOpportunity();
@@ -307,6 +315,32 @@ async function refreshArchive() {
   current = fresh;
   if (changed) { const th = $("#thread"); const y = th.scrollTop; renderOpp(); $("#thread").scrollTop = y; }
   if (!fresh.timeline.some((e) => e.archive_status === "pending")) clearInterval(poll);
+}
+
+async function showWallet() {
+  const w = await api("wallet");
+  const link = (kind, id) => `<a href="https://suiscan.xyz/mainnet/${kind}/${esc(id)}" target="_blank">${esc(id.slice(0, 10))}…${esc(id.slice(-6))}</a>`;
+  modal(`<h3 style="margin-top:0">My wallet</h3>
+    ${w.status === "ready" ? `
+      <p class="fine">Revior created this Sui wallet for your Google account (same account, same address, on any device). It owns your Walrus Memory account, so every memory Revior saves for you is owned by <b>your</b> address on Sui mainnet. Fees were sponsored.</p>
+      <table class="fine" style="width:100%;border-collapse:collapse">
+        <tr><td style="padding:4px 0">Wallet</td><td>${link("account", w.address)}</td></tr>
+        <tr><td style="padding:4px 0">Memory account</td><td>${link("object", w.memwal_account_id)}</td></tr>
+        <tr><td style="padding:4px 0">Created in</td><td>${link("tx", w.create_digest)}</td></tr>
+        <tr><td style="padding:4px 0">Revior's access key added in</td><td>${link("tx", w.delegate_digest)}</td></tr>
+      </table>
+      <h4 style="margin:18px 0 6px">Take it with you</h4>
+      <p class="fine">Export the private key to import the wallet into Slush or the Sui CLI. Anyone with this key controls the wallet and its memory account, including removing Revior's access. Store it safely and never share it.</p>
+      <div id="expOut"></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="ghost" id="expBtn">Export private key</button><button class="ghost" onclick="closeModal()">Close</button></div>`
+    : `<p class="fine">Your wallet is ${esc(w.status)}.</p><div style="display:flex;gap:8px"><button id="provBtn">Create my wallet</button><button class="ghost" onclick="closeModal()">Close</button></div>`}`);
+  if ($("#provBtn")) $("#provBtn").onclick = async () => { $("#provBtn").disabled = true; $("#provBtn").innerHTML = `<span class="spin"></span> Creating…`; try { await api("wallet/provision", {}); closeModal(); boot(); } catch (e) { toast(e.message); $("#provBtn").disabled = false; $("#provBtn").textContent = "Retry"; } };
+  if ($("#expBtn")) $("#expBtn").onclick = async () => {
+    if (!confirm("Show your wallet's private key? Anyone who sees it controls your wallet.")) return;
+    const r = await api("wallet/export", { confirm: "export" });
+    $("#expOut").innerHTML = `<textarea readonly style="font:12px var(--mono);min-height:52px">${esc(r.suiprivkey)}</textarea>`;
+    $("#expBtn").remove();
+  };
 }
 
 async function showMemory() {

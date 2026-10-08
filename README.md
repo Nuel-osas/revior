@@ -8,6 +8,7 @@ The hackathon cut of the specification below is implemented and deployed. It cov
 
 | Implemented | Deferred from the spec (still the plan) |
 |---|---|
+| **Zentos-style custodial wallet per Google user**: Ed25519 key minted on consent, AES-256-GCM in Postgres, same Google account = same Sui address; the wallet owns the user's **own MemWal account** (sponsored `create_account` + `add_delegate_key`, user pays 0 SUI); export endpoint as the self-custody escape hatch |
 | Google OIDC (server-verified ID token), signed HttpOnly session, CSRF header + origin check | Separate durable worker with leases/fencing (archive polling runs in `waitUntil`) |
 | AES-256-GCM encrypted content columns in Postgres (Neon); HMAC-derived MemWal namespaces | Owner-authorized remote deletion tool (forget excludes immediately; Walrus removal pending) |
 | DeepSeek extraction with exact-substring quote validation; Jev `choice` per claim pair | Retention sweeps, backups, preference confirmation in general memory |
@@ -15,6 +16,8 @@ The hackathon cut of the specification below is implemented and deployed. It cov
 | Cited assessment (changes, unknown, next check), conflicting terms kept visible | |
 
 Run locally: `pnpm install`, copy `.env.example` to `.env` and fill it, `pnpm db:migrate`, `pnpm dev` (port 3000, or `PORT=3001`). One-time Mainnet account: `scripts/provision-mainnet.ts` with an owner key in `.env.owner` (never deployed). End-to-end test: `pnpm tsx --env-file=.env scripts/e2e.ts`.
+
+Gas: a separate `revior-sponsor` wallet only co-signs the two account-setup transactions the server builds (fixed Move targets, never a client-supplied transaction). Measured cost per new user on Mainnet: about 0.0048 SUI (0.0040 create_account + 0.0008 add_delegate_key).
 
 Built and observed during the build:
 - DeepSeek V4.1 Flash thinks by default and spent the whole 2,000-token budget on hidden reasoning, returning empty content (`finish_reason: length`). Extraction and explanation run with thinking disabled.

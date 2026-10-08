@@ -1,6 +1,6 @@
 # Revoir
 
-*Revoir* means "to see again". Live: https://revoir.vercel.app · Walrus Memory on **Sui Mainnet** · DeepSeek Flash + Jev
+*Revoir* means "to see again". Live: https://revior.xyz · Walrus Memory on **Sui Mainnet** · DeepSeek Flash + Jev
 
 ## Status (8 October 2026)
 

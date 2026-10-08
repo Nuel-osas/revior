@@ -25,4 +25,4 @@ createServer(async (req, res) => {
     redirect(code: number, loc: string) { res.writeHead(code, { location: loc }); res.end(); return vres; },
   });
   await router(vreq as any, vres as any);
-}).listen(PORT, () => console.log(`Revior on http://localhost:${PORT}`));
+}).listen(PORT, () => console.log(`Revoir on http://localhost:${PORT}`));

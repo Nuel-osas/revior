@@ -1,6 +1,6 @@
 // Zentos-style custodial wallet for each Google user, and a MemWal account the user's wallet owns.
 //   first consent -> mint Ed25519 wallet + delegate key -> AES-GCM encrypt -> Postgres (keyed by user, i.e. Google sub)
-//   -> sponsored create_account (sender = user, gas = revior-sponsor) -> sponsored add_delegate_key
+//   -> sponsored create_account (sender = user, gas = revoir-sponsor) -> sponsored add_delegate_key
 // Users pay 0 SUI and see 0 popups. The sponsor only ever co-signs transactions built here, with two fixed
 // Move targets (an allowlist by construction): it never signs a client-supplied transaction.
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
@@ -72,7 +72,7 @@ export async function provisionWallet(userId: string) {
     }
     const pk = Buffer.from(String(delegate.publicKey), "hex");
     const t2 = await sponsored(wallet, (tx, pkg) =>
-      tx.moveCall({ target: `${pkg}::account::add_delegate_key`, arguments: [tx.object(accountId!), tx.object(REGISTRY), tx.pure.vector("u8", Array.from(pk)), tx.pure.string("revior"), tx.object(CLOCK)] }),
+      tx.moveCall({ target: `${pkg}::account::add_delegate_key`, arguments: [tx.object(accountId!), tx.object(REGISTRY), tx.pure.vector("u8", Array.from(pk)), tx.pure.string("revoir"), tx.object(CLOCK)] }),
     );
     const [ready] = await sql`update user_wallets set status = 'ready', delegate_digest = ${t2.digest}, last_error = null where user_id = ${userId} returning *`;
     return publicView(ready);

@@ -1,4 +1,4 @@
--- Revior hackathon cut. Content-bearing columns are AES-256-GCM ciphertext (lib/crypto.ts).
+-- Revoir hackathon cut. Content-bearing columns are AES-256-GCM ciphertext (lib/crypto.ts).
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
   google_iss text not null,

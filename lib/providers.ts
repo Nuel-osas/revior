@@ -68,7 +68,7 @@ export async function extractClaims(text: string) {
   return { claims, model: { requested: r.requested, returned: r.returned } };
 }
 
-const EXPLAIN = `You are Revior. You help someone see how a job or collaboration offer has changed across messages, with sources.
+const EXPLAIN = `You are Revoir. You help someone see how a job or collaboration offer has changed across messages, with sources.
 You receive the opportunity label, the newest message (current source), earlier sources from memory, and Jev's classification of claim pairs.
 Return JSON: {"headline":<one sentence>,"changes":[{"prior":<source id>,"current":<source id>,"relation":"contradiction"|"change","what":<one sentence naming both conditions>}],"notes":[{"text":<sentence>,"sources":[<source ids>]}],"unknown":<the most important thing that is still unknown>,"next_check":<one concrete, independent verification step>}
 Rules:

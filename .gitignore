@@ -9,3 +9,4 @@ private-evidence/
 evaluation-runs/
 .DS_Store
 .vercel
+.env*.local

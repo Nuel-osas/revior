@@ -1,5 +1,5 @@
 // Google sign-in (OpenID Connect code flow, basic scopes only) + stateless signed session cookie.
-// Writes require a same-origin request carrying the X-Revior header (CSRF): browsers cannot add it cross-site without CORS.
+// Writes require a same-origin request carrying the X-Revoir header (CSRF): browsers cannot add it cross-site without CORS.
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
@@ -65,7 +65,7 @@ export function requireUser(req: VercelRequest): string {
   if (s.exp < Date.now() / 1000) throw Object.assign(new Error("session expired"), { status: 401 });
   if (req.method !== "GET") {
     const origin = String(req.headers.origin ?? "");
-    if (req.headers["x-revior"] !== "1" || (origin && origin !== cfg.baseUrl)) throw Object.assign(new Error("blocked request"), { status: 403 });
+    if (req.headers["x-revoir"] !== "1" || (origin && origin !== cfg.baseUrl)) throw Object.assign(new Error("blocked request"), { status: 403 });
   }
   return s.u as string;
 }

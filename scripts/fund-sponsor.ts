@@ -1,4 +1,4 @@
-// Move SUI from the Revior owner wallet to the gas sponsor:  pnpm tsx scripts/fund-sponsor.ts 0.06
+// Move SUI from the Revoir owner wallet to the gas sponsor:  pnpm tsx scripts/fund-sponsor.ts 0.06
 import { readFileSync } from "node:fs";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";

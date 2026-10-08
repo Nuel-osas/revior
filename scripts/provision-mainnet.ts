@@ -1,4 +1,4 @@
-// One-time: create Revior's dedicated MemWal account on Mainnet and register the app's delegate key.
+// One-time: create Revoir's dedicated MemWal account on Mainnet and register the app's delegate key.
 // Reads the owner key from .env.owner (never deployed); writes MEMWAL_ACCOUNT_ID + MEMWAL_DELEGATE_KEY into .env.
 import { readFileSync, writeFileSync } from "node:fs";
 import { SuiGrpcClient } from "@mysten/sui/grpc";
@@ -23,7 +23,7 @@ const base = {
 const acct = await createAccount({ ...base });
 console.log(`account ${acct.accountId} (tx ${acct.digest})`);
 const d = await generateDelegateKey();
-const add = await addDelegateKey({ ...base, accountId: acct.accountId, publicKey: d.publicKey, label: "revior-app" });
+const add = await addDelegateKey({ ...base, accountId: acct.accountId, publicKey: d.publicKey, label: "revoir-app" });
 console.log(`delegate ${d.suiAddress} (tx ${add.digest})`);
 
 let text = readFileSync(".env", "utf8");

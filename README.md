@@ -1,6 +1,6 @@
-# Revior
+# Revoir
 
-*Revoir* means "to see again". Live: https://revior.vercel.app · Walrus Memory on **Sui Mainnet** · DeepSeek Flash + Jev
+*Revoir* means "to see again". Live: https://revoir.vercel.app · Walrus Memory on **Sui Mainnet** · DeepSeek Flash + Jev
 
 ## Status (8 October 2026)
 
@@ -17,7 +17,7 @@ The hackathon cut of the specification below is implemented and deployed. It cov
 
 Run locally: `pnpm install`, copy `.env.example` to `.env` and fill it, `pnpm db:migrate`, `pnpm dev` (port 3000, or `PORT=3001`). One-time Mainnet account: `scripts/provision-mainnet.ts` with an owner key in `.env.owner` (never deployed). End-to-end test: `pnpm tsx --env-file=.env scripts/e2e.ts`.
 
-Gas: a separate `revior-sponsor` wallet only co-signs the two account-setup transactions the server builds (fixed Move targets, never a client-supplied transaction). Measured cost per new user on Mainnet: about 0.0048 SUI (0.0040 create_account + 0.0008 add_delegate_key).
+Gas: a separate `revoir-sponsor` wallet only co-signs the two account-setup transactions the server builds (fixed Move targets, never a client-supplied transaction). Measured cost per new user on Mainnet: about 0.0048 SUI (0.0040 create_account + 0.0008 add_delegate_key).
 
 Built and observed during the build:
 - DeepSeek V4.1 Flash thinks by default and spent the whole 2,000-token budget on hidden reasoning, returning empty content (`finish_reason: length`). Extraction and explanation run with thinking disabled.

@@ -11,17 +11,28 @@ import { memwalFor } from "./wallet.js";
 import { parseGithubUrl, scanRepo } from "./repo-scan.js";
 import { extractIndicators, lookup, similarPatterns } from "./community.js";
 import { decide, scamProbability, signalsFrom, type Verdict } from "./verdict.js";
+import { blend, learnedProbability, learnedStats, normTactic, tacticVocabulary } from "./learning.js";
 
 // Verdict for the offer as remembered so far: Jev probability + red-flag signals + the community well.
-async function offerVerdict(oppId: string, allTexts: string[], claims: any[], changes: { relation: string; what: string }[], newestText: string): Promise<Verdict> {
-  const scans = await sql`select a.body_ct from assessments a join memory_events e on e.id = a.event_id where e.opportunity_id = ${oppId} and e.kind = 'repo_scan'`;
-  const repoLevels = scans.map((r) => open<any>(r.body_ct).level as string);
+async function offerVerdict(oppId: string, allTexts: string[], claims: any[], changes: { relation: string; what: string }[], newestText: string, newTactics: string[] = []): Promise<Verdict> {
+  const prev = await sql`select a.body_ct, e.kind from assessments a join memory_events e on e.id = a.event_id where e.opportunity_id = ${oppId}`;
+  const prevBodies = prev.map((r) => ({ kind: r.kind as string, a: open<any>(r.body_ct) }));
+  const repoLevels = prevBodies.filter((x) => x.kind === "repo_scan").map((x) => x.a.level as string);
+  const tactics = [...new Set([...prevBodies.flatMap((x) => (x.a.tactics ?? []) as string[]), ...newTactics].map(normTactic).filter(Boolean))];
   const text = allTexts.join("\n");
   const signals = signalsFrom(claims, changes, repoLevels, text);
   const [matches, similar] = await Promise.all([lookup(extractIndicators(text)).catch(() => []), similarPatterns(newestText.slice(0, 1500))]);
   const community = { matches, similar };
-  const p = await scamProbability(claims, changes, signals, community);
-  return decide(p, signals, community);
+  const jevP = await scamProbability(claims, changes, signals, community);
+  // The platform's own learning: how these signals and tactics turned out in offers people reported on.
+  const stats = await learnedStats();
+  const learned = learnedProbability(stats, [...signals, ...tactics]);
+  const blended = blend(jevP, learned, stats.outcomes);
+  const v = decide(blended.p, signals, community);
+  v.jev_p = jevP;
+  v.learned = learned ? { p: learned.p, outcomes: stats.outcomes, weight: +blended.weight.toFixed(2), used: learned.used } : null;
+  v.tactics = tactics;
+  return v;
 }
 async function storeRisk(oppId: string, v: Verdict) {
   await sql`update opportunities set risk_level = ${v.level}, risk_p = ${v.probability} where id = ${oppId}`;
@@ -166,7 +177,9 @@ export async function submitMessage(userId: string, oppId: string, text: string,
   // ---- explanation with citations ----
   const usedSources = new Set([`S${ev.seq}`, ...pairs.map((p) => p.prior.source)]);
   const sourceTexts = events.filter((e) => usedSources.has(`S${e.seq}`)).map((e) => ({ id: `S${e.seq}`, kind: e.kind, text: e.body.source.text, date: e.body.source.received_at.slice(0, 10) }));
+  const known_tactics = await tacticVocabulary().catch(() => []);
   const ex = await explain({
+    known_tactics,
     opportunity: label,
     current_source: { id: `S${ev.seq}`, text, claims: extracted.claims.map((c) => ({ topic: c.topic, statement: c.statement, quote: c.quote })) },
     earlier_sources: sourceTexts,
@@ -182,6 +195,7 @@ export async function submitMessage(userId: string, oppId: string, text: string,
     unknown: String(a.unknown ?? ""),
     next_check: String(a.next_check ?? ""),
     source_id: `S${ev.seq}`,
+    tactics: (Array.isArray(a.tactics) ? a.tactics : []).map((t: string) => normTactic(t)).filter(Boolean).slice(0, 4),
     jev: jev.results.map((r) => ({ ...r, pair: pairs.find((p) => p.id === r.id) })),
     jev_error: jev.error ?? null,
     jev_model: jev.model ?? null,
@@ -195,6 +209,7 @@ export async function submitMessage(userId: string, oppId: string, text: string,
     [...prior.map((c) => ({ ...c })), ...extracted.claims.map((c) => ({ ...c, source: `S${ev.seq}` }))],
     assessment.changes,
     text,
+    assessment.tactics,
   );
   (assessment as any).verdict = verdict;
   await storeRisk(oppId, verdict);

@@ -70,7 +70,7 @@ export async function extractClaims(text: string) {
 
 const EXPLAIN = `You are Revoir. You help someone see how a job or collaboration offer has changed across messages, with sources.
 You receive the opportunity label, the newest message (current source), earlier sources from memory, and Jev's classification of claim pairs.
-Return JSON: {"headline":<one sentence>,"changes":[{"prior":<source id>,"current":<source id>,"relation":"contradiction"|"change","what":<one sentence naming both conditions>}],"notes":[{"text":<sentence>,"sources":[<source ids>]}],"unknown":<the most important thing that is still unknown>,"next_check":<one concrete, independent verification step>}
+Return JSON: {"tactics":[<up to 4 short lowercase tags naming the tactics this offer uses so far, e.g. "verification fee to reserve slot", "move to telegram", "too good pay". Reuse tags from known_tactics when they fit; invent a new short tag only for something genuinely different. Use [] if nothing notable>],"headline":<one sentence>,"changes":[{"prior":<source id>,"current":<source id>,"relation":"contradiction"|"change","what":<one sentence naming both conditions>}],"notes":[{"text":<sentence>,"sources":[<source ids>]}],"unknown":<the most important thing that is still unknown>,"next_check":<one concrete, independent verification step>}
 Rules:
 - Cite only source ids you were given. Every change and note must cite sources.
 - At most 3 changes, most important first (payments and documents before anything else). Merge changes about the same condition into one. At most 2 notes, and never repeat a change as a note.

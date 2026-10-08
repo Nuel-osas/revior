@@ -9,6 +9,7 @@ import { cfg } from "./config.js";
 import { open, seal } from "./crypto.js";
 import { sql } from "./db.js";
 import { archive, archiveStatus, operatorMemwal, recallIn } from "./providers.js";
+import { snapshotOutcome } from "./learning.js";
 
 export type Kind = "phone" | "email" | "domain" | "handle" | "wallet" | "repo";
 export type Indicator = { kind: Kind; value: string; hint: string };
@@ -87,8 +88,12 @@ export async function lookup(indicators: Indicator[]): Promise<Match[]> {
 // Semantic match against anonymised patterns other people reported.
 export async function similarPatterns(query: string) {
   try {
-    const hits = await recallIn(operatorMemwal(), COMMUNITY_NS, query, 4);
+    const hits = await recallIn(operatorMemwal(), COMMUNITY_NS, query, 6);
+    // Only patterns that a real (non-test) reporter still stands behind.
+    const rows = await sql`select p.summary_ct from community_patterns p join users u on u.id = p.user_id where u.google_iss <> 'test'`;
+    const real = new Set(rows.map((r) => open<string>(r.summary_ct).trim()));
     return hits
+      .filter((h) => real.has(h.text.replace(/^\[rv1 pattern[^\]]*\]\s*/, "").trim()))
       .filter((h) => h.distance <= 0.62)
       .map((h) => ({ outcome: (h.text.match(/^\[rv1 pattern outcome=(\w+)\]/)?.[1] ?? "unsure") as Outcome, summary: h.text.replace(/^\[rv1 pattern[^\]]*\]\s*/, ""), distance: h.distance }))
       .filter((p) => p.outcome !== "unsure");
@@ -118,6 +123,12 @@ async function anonymisedPattern(texts: string[]) {
 
 // A user reports how an offer ended. Indicators get one vote from this user; the pattern joins the shared memory.
 export async function reportOutcome(userId: string, oppId: string, outcome: Outcome, share: boolean) {
+  // Learning snapshot first: what Revoir predicted, and which signals and tactics this offer showed.
+  const [opp] = await sql`select risk_level, risk_p from opportunities where id = ${oppId} and user_id = ${userId}`;
+  const assess = await sql`select body_ct from assessments where opportunity_id = ${oppId}`;
+  const bodies = assess.map((r) => open<any>(r.body_ct));
+  await snapshotOutcome(oppId, userId, outcome, { level: opp?.risk_level ?? null, p: opp?.risk_p ?? null },
+    bodies.flatMap((b) => b.verdict?.signals ?? []), bodies.flatMap((b) => [...(b.tactics ?? []), ...(b.verdict?.tactics ?? [])]));
   await sql`update opportunities set outcome = ${outcome}, outcome_at = now() where id = ${oppId} and user_id = ${userId}`;
   if (!share) return { shared: false, indicators: 0 };
   const events = await sql`select body_ct from memory_events where opportunity_id = ${oppId} and user_id = ${userId} order by seq`;

@@ -8,6 +8,7 @@ import { sql } from "../lib/db.js";
 import { loadOpportunity, rebuildDetails, submitCorrection, submitMessage, submitRepoScan } from "../lib/pipeline.js";
 import { transcribeImage } from "../lib/providers.js";
 import { communityStats, reportOutcome } from "../lib/community.js";
+import { accuracy, learnedStats } from "../lib/learning.js";
 import { exportWallet, provisionWallet, publicView, walletFor } from "../lib/wallet.js";
 
 export const config = { maxDuration: 300 };
@@ -33,6 +34,11 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
       per_user: rows.map((r, i) => ({ user: `user ${i + 1}`, confirmed_blobs: Number(r.confirmed), opportunities: Number(r.opps), active_days: Number(r.days), first: r.first, last: r.last })),
       network: "mainnet",
       community: await communityStats(),
+      learning: await (async () => {
+        const l = await learnedStats();
+        const top = l.features.filter((f) => f.scam + f.legit >= 2).sort((a, b) => (b.scam - b.legit) - (a.scam - a.legit)).slice(0, 8);
+        return { outcomes: l.outcomes, scams: l.scams, legits: l.legits, strongest_scam_features: top, accuracy: await accuracy() };
+      })(),
     });
   }
 

@@ -513,6 +513,16 @@
   .wc-a { margin-top: 10px; font-size: 14px; }
   .well-arrow { font-size: 34px; color: var(--w-lav); }
   @media (max-width: 980px) { .well-grid { grid-template-columns: 1fr; } .well-arrow { transform: rotate(90deg); justify-self: center; } }
+  .v-sig em, .v-tac em { font-style: normal; color: var(--muted); }
+  .v-tac { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .v-tac span { font-size: 12px; color: #4a3a7a; background: rgba(202,177,255,.25); border-radius: 999px; padding: 2px 9px; }
+  .learn-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 30px; }
+  .learn-strip div { background: var(--w-ink); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 4px; }
+  .learn-strip b { font-size: 34px; font-weight: 700; background: var(--w-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .learn-strip span { color: var(--w-grey2); font-size: 14px; }
+  .learn-strip p { grid-column: 1 / -1; text-align: center; color: var(--w-grey); font-size: 13px; margin: 0; }
+  .learn-strip a { color: var(--w-lav); }
+  @media (max-width: 980px) { .learn-strip { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -572,7 +582,21 @@ function bindTop() {
 }
 
 // ---------- landing ----------
+async function fillLearnStrip() {
+  try {
+    const st = await (await fetch("/api/stats")).json();
+    const el = document.getElementById("learnStrip"); if (!el) return;
+    const items = [
+      [st.learning?.outcomes ?? 0, "outcomes reported"],
+      [st.community?.known_scam_indicators ?? 0, "known scam indicators"],
+      [st.community?.patterns_on_walrus ?? 0, "anonymous patterns on Walrus"],
+      [st.confirmed_opportunity_blobs ?? 0, "messages remembered on mainnet"],
+    ];
+    el.innerHTML = items.map(([n, l]) => `<div><b>${n}</b><span>${l}</span></div>`).join("") + `<p>Live numbers from real users, from <a href="/api/stats" target="_blank">/api/stats</a>.</p>`;
+  } catch {}
+}
 function renderLanding() {
+  setTimeout(fillLearnStrip, 0);
   const err = new URLSearchParams(location.search).get("error");
   const ARROW = `<span class="arr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>`;
   const EYE = CYCLE("#fff", 2.2);
@@ -708,6 +732,8 @@ function renderLanding() {
         </div>
       </div>
       <p class="lede" style="margin-top:22px;font-size:14px">Counts only. One vote per person per indicator, "known" needs two different people, and legit reports count too. Illustrative example.</p>
+      <div class="learn-strip" id="learnStrip"></div>
+      <p class="lede" style="font-size:14px;margin-top:10px">Every reported outcome also teaches the verdict itself: Revoir learns how often each warning sign and tactic shows up in real scams versus legit offers, and blends that with Jev. The more people report, the more weight the learned model gets.</p>
     </section>
 
     <section class="lp-sec" id="how">
@@ -889,14 +915,20 @@ const KIND = { phone: "phone number", email: "email address", domain: "website",
 function renderVerdict(v) {
   if (!v) return "";
   const cls = v.level === "high" ? "v-high" : v.level === "medium" ? "v-med" : "v-low";
-  const pct = typeof v.probability === "number" ? `<span class="v-p">${Math.round(v.probability * 100)}% scam likelihood</span>` : "";
+  const learned = v.learned && v.learned.outcomes ? ` · learned from ${v.learned.outcomes} reported outcome${v.learned.outcomes === 1 ? "" : "s"}` : "";
+  const jev = typeof v.jev_p === "number" && v.learned ? ` · Jev ${Math.round(v.jev_p * 100)}%` : "";
+  const pct = typeof v.probability === "number" ? `<span class="v-p">${Math.round(v.probability * 100)}% scam likelihood${jev}${learned}</span>` : "";
+  const stat = (key) => (v.learned?.used || []).find((u) => u.key === key);
+  const sigChip = (x) => { const st = stat(x); return `<span>${esc(x)}${st ? ` <em>· seen in ${st.scam} reported scam${st.scam === 1 ? "" : "s"}, ${st.legit} legit</em>` : ""}</span>`; };
+  const tac = (v.tactics || []).length ? `<div class="v-tac">${v.tactics.map((t) => { const st = stat(t); return `<span>#${esc(t)}${st ? ` <em>${st.scam}/${st.scam + st.legit} scams</em>` : ""}</span>`; }).join("")}</div>` : "";
   const comm = (v.community?.matches || []).filter((m) => m.scam_users || m.legit_users).map((m) =>
     `<li><b>${m.known_scam ? "Known scam indicator" : m.scam_users > m.legit_users ? "Reported before" : "Seen before"}:</b> this ${esc(KIND[m.kind] || m.kind)} (${esc(m.hint)}) was reported as a scam by ${m.scam_users} Revoir user${m.scam_users === 1 ? "" : "s"}${m.legit_users ? ` and as legit by ${m.legit_users}` : ""}.</li>`).join("");
   const sim = (v.community?.similar || []).slice(0, 2).map((p) =>
     `<li><b>Matches a pattern others reported as ${esc(p.outcome)}:</b> "${esc(p.summary.slice(0, 220))}${p.summary.length > 220 ? "…" : ""}"</li>`).join("");
   return `<div class="verdict ${cls}">
     <div class="v-h"><span class="v-label">${esc(v.label)}</span>${pct}</div>
-    ${v.signals?.length ? `<div class="v-sig">${v.signals.map((x) => `<span>${esc(x)}</span>`).join("")}</div>` : ""}
+    ${v.signals?.length ? `<div class="v-sig">${v.signals.map(sigChip).join("")}</div>` : ""}
+    ${tac}
     ${comm || sim ? `<div class="v-well"><div class="tag">From the Revoir community</div><ul>${comm}${sim}</ul></div>` : ""}
   </div>`;
 }

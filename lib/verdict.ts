@@ -10,6 +10,9 @@ export type Verdict = {
   level: "high" | "medium" | "low";
   label: string;
   probability: number | null;
+  jev_p?: number | null;
+  learned?: { p: number; outcomes: number; weight: number; used: { key: string; scam: number; legit: number }[] } | null;
+  tactics?: string[];
   signals: string[];
   community: { matches: Match[]; similar: { outcome: string; summary: string; distance: number }[] };
 };
@@ -19,7 +22,9 @@ type C = Pick<Claim, "topic" | "statement" | "quote" | "requested_action"> & { s
 export function signalsFrom(claims: C[], changes: { relation: string; what: string }[], repoLevels: string[], allText: string): string[] {
   const s: string[] = [];
   const t = allText.toLowerCase();
-  if (claims.some((c) => c.topic === "payment_or_fee" && c.requested_action)) s.push("You are asked to pay something");
+  // Only when the candidate is the one paying ("we pay you $400" is not a red flag).
+  const youPay = (c: C) => c.topic === "payment_or_fee" && c.requested_action && !/\b(we|company|employer|they) (will )?pay (you|the (candidate|recipient|contractor))\b|paid to you|payments? (are|is) made to you|you invoice|no payment/i.test(`${c.statement} ${c.quote}`);
+  if (claims.some(youPay)) s.push("You are asked to pay something");
   if (/gift ?card|usdt|bitcoin|\bbtc\b|crypto|wallet address|western union|moneygram|send (the )?money/.test(t)) s.push("Payment by crypto, gift card or money transfer");
   if (/(via|through|using) (the |this )?link|click (the |this )?link|pay(ment)? link/.test(t)) s.push("Payment or onboarding through a link they send");
   if (/\b(today|right now|immediately|asap|within (24|48) hours|before (tonight|midnight)|expires? (today|soon))\b/.test(t) && claims.some((c) => c.requested_action)) s.push("Pressure to act quickly");

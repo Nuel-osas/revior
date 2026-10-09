@@ -196,9 +196,28 @@ async function onMessage(m: any) {
     const w: any = await walletFor(u.id);
     return send(chat, w ? `Wallet: <code>${esc(w.address)}</code>\nMemory account: <code>${esc(w.memwal_account_id ?? "being created")}</code>\nhttps://suiscan.xyz/mainnet/account/${esc(w.address)}` : "No wallet yet. Send /start.");
   }
+  // Answer to a bare /new or /scan from the command menu.
+  await chatState(chat, u.id);
+  const [{ awaiting }] = await sql`select awaiting from tg_chats where chat_id = ${chat}`;
+  if (awaiting && text && !text.startsWith("/")) {
+    await sql`update tg_chats set awaiting = null where chat_id = ${chat}`;
+    if (awaiting === "name") {
+      const id = await createOffer(chat, u.id, text);
+      if (id) await send(chat, `Started <b>${esc(text.slice(0, 80))}</b>. Now forward or paste the recruiter's first message.`);
+      return;
+    }
+    if (awaiting === "repo") {
+      if (!parseGithubUrl(text)) return send(chat, "That isn't a public GitHub link. Try /scan again.");
+      return analyse(chat, u.id, (o) => submitRepoScan(u.id, o.id, text, `tg:${chat}:${m.message_id}`, o.label));
+    }
+  }
+  if (text.startsWith("/") && awaiting) await sql`update tg_chats set awaiting = null where chat_id = ${chat}`;
   if (text.startsWith("/new")) {
     const label = text.replace(/^\/new(@\w+)?/, "").trim();
-    if (!label) return send(chat, "Give it a name: <code>/new Binance community manager</code>");
+    if (!label) {
+      await sql`update tg_chats set awaiting = 'name' where chat_id = ${chat}`;
+      return send(chat, "What should I call this offer? For example: <i>Binance community manager</i>");
+    }
     await chatState(chat, u.id);
     const id = await createOffer(chat, u.id, label);
     if (id) await send(chat, `Started <b>${esc(label)}</b>. Forward or paste the recruiter's first message.`);
@@ -212,6 +231,10 @@ async function onMessage(m: any) {
   const hint = m.forward_origin?.sender_user?.first_name ?? m.forward_origin?.sender_user_name ?? m.forward_origin?.chat?.title ?? m.forward_from?.first_name;
   const repo = text.startsWith("/scan") ? text.replace(/^\/scan(@\w+)?/, "").trim() : (/^\S*github\.com\/\S+$/.test(text) ? text : "");
   if (text.startsWith("/scan") || repo) {
+    if (!repo) {
+      await sql`update tg_chats set awaiting = 'repo' where chat_id = ${chat}`;
+      return send(chat, "Send me the GitHub link they asked you to clone or run.");
+    }
     if (!parseGithubUrl(repo)) return send(chat, "Send a public GitHub link: <code>/scan github.com/user/repo</code>");
     return analyse(chat, u.id, (o) => submitRepoScan(u.id, o.id, repo, `tg:${chat}:${m.message_id}`, o.label));
   }

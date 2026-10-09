@@ -883,7 +883,8 @@ function newOffer() {
     <input id="lbl" maxlength="80" placeholder="Name this offer" />
     <div style="display:flex;gap:10px;margin-top:16px"><button id="mk">Create</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
   $("#lbl").focus();
-  const go = async () => { const label = $("#lbl").value.trim(); if (!label) return; try { const o = await api("opportunities", { label }); closeModal(); location.hash = `#/o/${o.id}`; } catch (e) { toast(e.message); } };
+  let busy = false;
+  const go = async () => { const label = $("#lbl").value.trim(); if (!label || busy) return; busy = true; $("#mk").disabled = true; try { const o = await api("opportunities", { label }); closeModal(); window.__focusMsg = true; location.hash = `#/o/${o.id}`; } catch (e) { toast(e.message); busy = false; $("#mk").disabled = false; } };
   $("#mk").onclick = go; $("#lbl").onkeydown = (e) => { if (e.key === "Enter") go(); };
 }
 
@@ -1027,6 +1028,7 @@ function paintOffer(keepScroll) {
     $("#attach").onclick = () => $("#file").click();
     $("#scanBtn").onclick = () => { const u = ghLink($("#msg").value); u ? scanRepo(u) : askRepo(); };
     $("#msg").addEventListener("input", repoHint);
+    if (window.__focusMsg) { window.__focusMsg = false; $("#msg").focus(); $("#msg").scrollIntoView({ block: "center" }); }
     $("#file").onchange = (e) => e.target.files[0] && readShot(e.target.files[0]);
     $("#msg").addEventListener("paste", (e) => { const f = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith("image/")); if (f) { e.preventDefault(); readShot(f); } });
     const box = $("#box");

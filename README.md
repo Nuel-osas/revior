@@ -21,7 +21,8 @@ Built for Walrus Session 8, "Chatbots That Remember".
 3. For every message, Revoir extracts the claims (pay, fees, channel, contacts) with exact quotes, recalls the earlier claims for that offer from Walrus Memory, has Jev compare then and now, and has DeepSeek explain what changed, citing both messages.
 4. You get a verdict: Likely scam, Suspicious, or No scam signals found.
 5. Paste a GitHub link a "recruiter" wants you to run and Revoir scans it without running it: install hooks, VS Code autorun tasks, `curl | bash`, code that reads wallet or SSH keys, exfiltration webhooks.
-6. When the offer ends, report how it went. Phone numbers, emails, domains, handles and wallets are hashed into a shared memory, so the next person who gets a message from the same number is warned.
+6. Every link and email domain is checked without opening it: lookalikes of known brands (`binance-careers.top`, `rnetamask.io`, `sui-foundation.com`), domains registered in the last 30 days (registry RDAP data), shortened links, punycode and raw IP addresses, and a link on a domain the earlier messages never used.
+7. When the offer ends, report how it went. Phone numbers, emails, domains, handles and wallets are hashed into a shared memory, so the next person who gets a message from the same number is warned.
 
 ## How Walrus Memory is used
 
@@ -101,6 +102,7 @@ The app is a single Vercel function (`api/router.ts`) plus static files in `publ
 | `lib/community.ts` | Shared memory: hashed indicators, anonymised patterns |
 | `lib/verdict.ts`, `lib/learning.ts` | Scam verdict, and the model that learns from reported outcomes |
 | `lib/repo-scan.ts` | GitHub repo scan (downloads the tarball, never executes it) |
+| `lib/links.ts` | Link check: lookalike brands, domain age via RDAP, shorteners, punycode, changed domains |
 | `public/index.html` | The whole web app |
 | `migrations/` | Postgres schema |
 | `scripts/` | Provisioning, tests, evidence, recovery |

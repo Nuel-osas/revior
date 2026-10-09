@@ -13,6 +13,7 @@ export type Verdict = {
   jev_p?: number | null;
   learned?: { p: number; outcomes: number; weight: number; used: { key: string; scam: number; legit: number }[] } | null;
   tactics?: string[];
+  links?: import("./links.js").LinkFinding[];
   signals: string[];
   community: { matches: Match[]; similar: { outcome: string; summary: string; distance: number }[] };
 };
@@ -68,7 +69,7 @@ export function decide(p: number | null, signals: string[], community: Verdict["
   const known = community.matches.some((m) => m.known_scam);
   const reported = community.matches.some((m) => m.scam_users > m.legit_users);
   const similarScam = community.similar.some((x) => x.outcome === "scam");
-  const strong = signals.filter((x) => /pay something|crypto|documents|red flags|contradicted/.test(x)).length;
+  const strong = signals.filter((x) => /pay something|crypto|documents|red flags|contradicted|imitates a known brand|registered in the last|disguises/.test(x)).length;
   let level: Verdict["level"] = "low";
   if (known || (p ?? 0) >= 0.7 || (strong >= 2 && (p ?? 0.5) >= 0.5)) level = "high";
   else if (reported || similarScam || (p ?? 0) >= 0.4 || strong >= 1) level = "medium";

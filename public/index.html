@@ -503,6 +503,7 @@
   .v-well { margin-top: 10px; border-top: 1px dashed rgba(0,0,0,.12); padding-top: 8px; }
   .v-well ul { margin: 4px 0 0; padding-left: 18px; font-size: 13.5px; }
   .v-well li { margin: 3px 0; }
+  .v-links code { font-family: "Google Sans Code", monospace; font-size: .92em; background: rgba(0,0,0,.05); padding: 1px 6px; border-radius: 5px; }
   .badge.risk-h { background: #fde7e6; color: #b42318; }
   .badge.risk-m { background: #fdf3d8; color: #a16207; }
   .badge.risk-l { background: #e4f5e9; color: #15803d; }
@@ -926,10 +927,14 @@ function renderVerdict(v) {
     `<li><b>${m.known_scam ? "Known scam indicator" : m.scam_users > m.legit_users ? "Reported before" : "Seen before"}:</b> this ${esc(KIND[m.kind] || m.kind)} (${esc(m.hint)}) was reported as a scam by ${m.scam_users} Revoir user${m.scam_users === 1 ? "" : "s"}${m.legit_users ? ` and as legit by ${m.legit_users}` : ""}.</li>`).join("");
   const sim = (v.community?.similar || []).slice(0, 2).map((p) =>
     `<li><b>Matches a pattern others reported as ${esc(p.outcome)}:</b> "${esc(p.summary.slice(0, 220))}${p.summary.length > 220 ? "…" : ""}"</li>`).join("");
+  const byHost = {};
+  for (const f of v.links || []) (byHost[f.host] ||= []).push(f.detail);
+  const links = Object.entries(byHost).map(([h, d]) => `<li><code>${esc(h)}</code> ${esc(d.join("; "))}</li>`).join("");
   return `<div class="verdict ${cls}">
     <div class="v-h"><span class="v-label">${esc(v.label)}</span>${pct}</div>
     ${v.signals?.length ? `<div class="v-sig">${v.signals.map(sigChip).join("")}</div>` : ""}
     ${tac}
+    ${links ? `<div class="v-well v-links"><div class="tag">Links in this offer</div><ul>${links}</ul></div>` : ""}
     ${comm || sim ? `<div class="v-well"><div class="tag">From the Revoir community</div><ul>${comm}${sim}</ul></div>` : ""}
   </div>`;
 }

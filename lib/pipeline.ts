@@ -11,6 +11,7 @@ import { memwalFor } from "./wallet.js";
 import { parseGithubUrl, scanRepo } from "./repo-scan.js";
 import { extractIndicators, lookup, similarPatterns } from "./community.js";
 import { decide, scamProbability, signalsFrom, type Verdict } from "./verdict.js";
+import { checkLinks, type LinkFinding } from "./links.js";
 import { blend, learnedProbability, learnedStats, normTactic, tacticVocabulary } from "./learning.js";
 
 // Verdict for the offer as remembered so far: Jev probability + red-flag signals + the community well.
@@ -21,6 +22,8 @@ async function offerVerdict(oppId: string, allTexts: string[], claims: any[], ch
   const tactics = [...new Set([...prevBodies.flatMap((x) => (x.a.tactics ?? []) as string[]), ...newTactics].map(normTactic).filter(Boolean))];
   const text = allTexts.join("\n");
   const signals = signalsFrom(claims, changes, repoLevels, text);
+  const linkCheck = await checkLinks(allTexts.slice(0, -1).join("\n"), allTexts[allTexts.length - 1] ?? "").catch(() => ({ signals: [] as string[], links: [] as LinkFinding[] }));
+  signals.push(...linkCheck.signals);
   const [matches, similar] = await Promise.all([lookup(extractIndicators(text)).catch(() => []), similarPatterns(newestText.slice(0, 1500))]);
   const community = { matches, similar };
   const jevP = await scamProbability(claims, changes, signals, community);
@@ -32,6 +35,7 @@ async function offerVerdict(oppId: string, allTexts: string[], claims: any[], ch
   v.jev_p = jevP;
   v.learned = learned ? { p: learned.p, outcomes: stats.outcomes, weight: +blended.weight.toFixed(2), used: learned.used } : null;
   v.tactics = tactics;
+  v.links = linkCheck.links;
   return v;
 }
 async function storeRisk(oppId: string, v: Verdict) {

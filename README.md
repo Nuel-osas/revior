@@ -1,102 +1,120 @@
 # Revoir
 
-*Revoir* means "to see again". Live: https://revior.xyz · Walrus Memory on **Sui Mainnet** · DeepSeek Flash + Jev
+A chatbot that remembers what a recruiter told you, and catches the moment the story changes.
 
-## Status (8 October 2026)
+Fake job offers rarely look fake on day one. "Applicants pay no fees" on Monday becomes "send a refundable $60 deposit today, we'll finish on Telegram" on Thursday. A bot without memory only ever sees Thursday. Revoir recalls Monday from Walrus Memory and puts both quotes side by side.
 
-The hackathon cut of the specification below is implemented and deployed. It covers the spec's first implementation milestone end to end: Google sign-in → create an opportunity → paste a message → DeepSeek extracts claims with exact quotes → the event is archived to MemWal on Mainnet and confirmed only on `done` → a later message recalls earlier evidence from MemWal, Jev classifies each prior/current claim pair, DeepSeek explains with citations → details, timeline and private general memory update → corrections append and supersede without editing history.
-
-| Implemented | Deferred from the spec (still the plan) |
+| | |
 |---|---|
-| **Zentos-style custodial wallet per Google user**: Ed25519 key minted on consent, AES-256-GCM in Postgres, same Google account = same Sui address; the wallet owns the user's **own MemWal account** (sponsored `create_account` + `add_delegate_key`, user pays 0 SUI); export endpoint as the self-custody escape hatch |
-| Google OIDC (server-verified ID token), signed HttpOnly session, CSRF header + origin check | Separate durable worker with leases/fencing (archive polling runs in `waitUntil`) |
-| AES-256-GCM encrypted content columns in Postgres (Neon); HMAC-derived MemWal namespaces | Owner-authorized remote deletion tool (forget excludes immediately; Walrus removal pending) |
-| DeepSeek extraction with exact-substring quote validation; Jev `choice` per claim pair |
-| **Scam verdict on every message**: Likely scam / Suspicious / No scam signals found, from Jev's `noul` probability over the remembered offer, deterministic red-flag signals, and community matches |
-| **Well of experience (memory across users)**: users report how an offer ended; phones, emails, domains, handles, wallets and repos become HMAC-hashed indicators with one vote per user ("known" needs 2+ people), and an anonymised tactics pattern is archived to a shared Walrus Memory namespace and recalled by meaning for everyone's new messages |
-| **The platform learns**: every reported outcome snapshots the signals and tactics the offer showed and what Revoir predicted. A Laplace-smoothed naive Bayes model learns how often each signal and DeepSeek-tagged tactic appears in reported scams versus legit offers, and is blended with Jev's probability by evidence weight n/(n+10). DeepSeek reuses learned tactic tags so the vocabulary converges. Revoir also measures its own accuracy (prediction before outcome versus outcome) in `/api/stats`. Synthetic test data is excluded from everything it learns |
-| **GitHub repo scan** for "clone our repo and run npm install" take-home tests: downloads the public tarball (never executes it), deterministic rules for install hooks, VS Code `folderOpen` tasks, `curl \| bash`, eval/obfuscation, credential and wallet paths, env-var and Discord-webhook exfiltration, then DeepSeek reviews manifests, entry points and flagged files. Findings must quote evidence that exists in the file, or they are dropped. Scans are stored in the offer's Walrus memory |
-| **Screenshots**: paste, drop or attach a WhatsApp/Telegram/email screenshot; DeepSeek V4.1 Flash transcribes it verbatim, the user reviews and edits the text, then it runs the same pipeline. Claims inside one message are also compared, so "no fee" followed by "pay the $45 fee" in one screenshot is caught | Retention sweeps, backups, preference confirmation in general memory |
-| MemWal Mainnet archive + recall, recalled events validated against the opportunity | Verification-report UI beyond corrections |
-| Cited assessment (changes, unknown, next check), conflicting terms kept visible | |
+| Live | https://revior.xyz |
+| Demo video | https://youtu.be/DXSasOUvmM8 |
+| Article | [How I built a chatbot that remembers what recruiters promised you](https://medium.com/@pemmy606/how-i-built-a-chatbot-that-remembers-what-recruiters-promised-you-walrus-memory-deepseek-jev-e8fcc60db0f5) |
+| Memory | Walrus Memory (`@mysten-incubation/memwal` 0.1.8) on Sui mainnet |
+| Models | DeepSeek V4 Flash (`deepseek-flash`, text and screenshots) and Jev by TypeSafe (claim comparison) |
 
-Run locally: `pnpm install`, copy `.env.example` to `.env` and fill it, `pnpm db:migrate`, `pnpm dev` (port 3000, or `PORT=3001`). One-time Mainnet account: `scripts/provision-mainnet.ts` with an owner key in `.env.owner` (never deployed). End-to-end test: `pnpm tsx --env-file=.env scripts/e2e.ts`.
+Built for Walrus Session 8, "Chatbots That Remember".
 
-Gas: a separate `revoir-sponsor` wallet only co-signs the two account-setup transactions the server builds (fixed Move targets, never a client-supplied transaction). Measured cost per new user on Mainnet: about 0.0048 SUI (0.0040 create_account + 0.0008 add_delegate_key).
+## What it does
 
-Built and observed during the build:
-- DeepSeek V4.1 Flash thinks by default and spent the whole 2,000-token budget on hidden reasoning, returning empty content (`finish_reason: length`). Extraction and explanation run with thinking disabled.
-- Jev on "Applicants pay no fees" vs "send a refundable $60 onboarding deposit": contradiction 0.90 to 0.95. On "onboarding only through our careers portal" vs "HR partner will finish onboarding on Telegram": contradiction 0.98.
+1. Sign in with Google. Revoir creates your own Sui wallet and your own Walrus Memory account (gas is sponsored).
+2. Create an offer and paste each message as it arrives, as text or a screenshot.
+3. For every message, Revoir extracts the claims (pay, fees, channel, contacts) with exact quotes, recalls the earlier claims for that offer from Walrus Memory, has Jev compare then and now, and has DeepSeek explain what changed, citing both messages.
+4. You get a verdict: Likely scam, Suspicious, or No scam signals found.
+5. Paste a GitHub link a "recruiter" wants you to run and Revoir scans it without running it: install hooks, VS Code autorun tasks, `curl | bash`, code that reads wallet or SSH keys, exfiltration webhooks.
+6. When the offer ends, report how it went. Phone numbers, emails, domains, handles and wallets are hashed into a shared memory, so the next person who gets a message from the same number is warned.
 
----
+## How Walrus Memory is used
 
-# SecondLook (original specification)
-
-**A web assistant that remembers how a job or collaboration offer changes—and shows you what to verify before you take the next step.**
-
-**Current direction:** sign in with Google → create an opportunity → chat and add updates → maintain its database record and sourced history → update the user's private general memory. This revision replaces the original Telegram-first entry point. Google sign-in identifies the account; Gmail inbox access is outside the first release. See the [complete account-to-memory flow](docs/12-account-and-opportunity-flow.md).
-
-SecondLook keeps a sourced history of an offer across conversations. When a new message changes an earlier condition, introduces a new contact, or asks for something the sender previously ruled out, it puts the relevant messages beside each other. It helps the user make an informed decision without pretending to certify a person or opportunity.
-
-This directory is the build specification, prepared on **8 October 2026**. It contains product decisions, architecture, contracts, synthetic evaluation scenarios, and a delivery plan. ~~There is no SecondLook application implementation or deployment here yet.~~ (Superseded the same day: see Status above.) Provider integrations described as verified have been checked against documentation and the installed MemWal SDK; live credentials and Mainnet behavior still need integration tests.
-
-## The product in one table
-
-| Project | What it remembers | Why that memory matters |
+| What | Where | When |
 |---|---|---|
-| SecondLook: a second opinion on an evolving job or collaboration offer | Dated messages, claimed identities, agreed conditions, requested actions, verification attempts, user corrections, and unresolved questions | A message that seems reasonable alone can contradict an earlier promise. The bot can show the change, cite both messages, and suggest an independent check. |
+| Each message plus its extracted claims | The user's own MemWal account, namespace per offer | Written after every message, confirmed only when the job is `done` |
+| Repo scan results | Same offer namespace | After each scan |
+| Open checks ("verify the company on its own domain") | The user's general namespace | When the assessment suggests one |
+| Anonymised scam tactics from reported outcomes | The app's account, shared community namespace | When a user reports an outcome |
 
-## The defining interaction
+Recall happens on every new message, before the model sees anything: the earlier claims for that offer are recalled and are what Jev and DeepSeek compare against. Without the recall there is nothing to compare, so the "Then" side is empty.
 
-1. A developer signs in with Google, creates an opportunity, and pastes: “There are no applicant fees. Onboarding happens only through our careers portal.”
-2. SecondLook saves the statement **as a claim**, with the message as its source.
-3. Days later, the developer returns: “They now want an onboarding deposit.”
-4. SecondLook retrieves the previous condition and responds: “This changes the earlier no-fee condition. Here are both messages. Confirm the request through a company contact you found independently before paying.”
-5. The opportunity's details and unresolved checks update in the workspace. Relevant information enters the user's private general memory with its source attached.
-6. The developer can correct a mistaken extraction, add a verification result, or remove the opportunity and derived memories.
+Each message in the app links to its blob on Walruscan ("✓ remembered on Walrus").
 
-All examples in these documents are synthetic. They are product scenarios, not evidence that anyone used the bot or that a real company acted dishonestly.
+## Run it yourself
 
-## Decisions locked for the first release
+You need Node 22+, pnpm, a Postgres database (a free [Neon](https://neon.tech) project works), a Google OAuth client, a DeepSeek API key, a TypeSafe (Jev) API key, and two Sui mainnet wallets with a little SUI.
 
-| Area | Decision |
+```bash
+git clone https://github.com/Nuel-osas/revior
+cd revior
+pnpm install
+cp .env.example .env
+```
+
+**1. Fill `.env`.** Every variable is explained in [.env.example](.env.example). Quick notes:
+- Google: create an OAuth client of type "Web application" and add `http://localhost:3001/auth/google/callback` as an authorized redirect URI.
+- Secrets: `openssl rand -base64 32` for `AUTH_SESSION_SECRET`, `CONTENT_ENCRYPTION_KEY_BASE64` and `NAMESPACE_HMAC_KEY_BASE64` (three different values).
+
+**2. Create the database tables.**
+```bash
+pnpm db:migrate
+```
+
+**3. Create the app's Walrus Memory account (one time).** Put an owner wallet with about 0.05 SUI in `.env.owner` (this file is never deployed):
+```
+OWNER_ADDRESS=0x...
+OWNER_SUI_PRIVATE_KEY=suiprivkey...
+```
+Then:
+```bash
+pnpm provision        # creates the MemWal account, writes MEMWAL_ACCOUNT_ID and MEMWAL_DELEGATE_KEY into .env
+pnpm smoke            # remember + recall round trip on mainnet
+```
+Alternatively, create an account and delegate key at https://memory.walrus.xyz/dashboard and paste them into `.env`.
+
+**4. Fund the gas sponsor.** Set `SPONSOR_ADDRESS` and `SPONSOR_SUI_PRIVATE_KEY` in `.env` (a separate wallet from the owner), then:
+```bash
+pnpm fund-sponsor 0.05   # moves 0.05 SUI from the owner to the sponsor, enough for about 10 users
+```
+
+**5. Run it.**
+```bash
+pnpm dev                 # http://localhost:3001
+```
+
+**6. Check it works end to end.**
+```bash
+pnpm e2e                 # synthetic test user: provisions a wallet, sends two messages, waits for Walrus, prints the changes found
+pnpm evidence            # per real user: memories stored on Walrus, wallet address, blob IDs
+```
+
+Test users are created with `google_iss = 'test'` and are excluded from stats and from everything the platform learns.
+
+### Deploy
+
+The app is a single Vercel function (`api/router.ts`) plus static files in `public/`, with routes in `vercel.json`. Add the same variables from `.env` to the Vercel project (never `.env.owner`), set `PUBLIC_BASE_URL` and `GOOGLE_REDIRECT_URI` to your domain, and deploy with `vercel --prod`.
+
+## Layout
+
+| Path | What it is |
 |---|---|
-| First user | Developers evaluating remote job or collaboration offers |
-| Interface | Web workspace with Google sign-in, opportunity cards, and a chat inside each opportunity |
-| Unit of memory | Opportunity history plus a separately scoped private general memory for each user |
-| Conversation and extraction | DeepSeek Flash; configurable model identifier |
-| Structured comparison | Jev, through the official Typesafe API |
-| Persistent archive and semantic recall | MemWal on Walrus Mainnet for the submission |
-| Backend | TypeScript on Node.js 22, HTTP service plus durable worker |
-| Operational storage | PostgreSQL for identity, queues, references, deletion exclusions, and encrypted case projections |
-| Product output | Changes, evidence, unknowns, and one useful verification step |
-| Product boundary | No safety certification, fraud probability, public accusation, or autonomous contact/payment |
+| `api/router.ts` | All HTTP routes |
+| `lib/pipeline.ts` | Message flow: extract, archive, recall, compare, explain, verdict |
+| `lib/providers.ts` | DeepSeek, Jev and Walrus Memory calls (with 429 retry) |
+| `lib/wallet.ts` | Per-user Sui wallet and MemWal account, sponsored transactions |
+| `lib/community.ts` | Shared memory: hashed indicators, anonymised patterns |
+| `lib/verdict.ts`, `lib/learning.ts` | Scam verdict, and the model that learns from reported outcomes |
+| `lib/repo-scan.ts` | GitHub repo scan (downloads the tarball, never executes it) |
+| `public/index.html` | The whole web app |
+| `migrations/` | Postgres schema |
+| `scripts/` | Provisioning, tests, evidence, recovery |
+| `docs/` | The original product specification ([docs/SPEC.md](docs/SPEC.md)) |
 
-The requested DeepSeek V4 Flash alias currently maps to V4.1 Flash. The implementation default is `deepseek-flash`; retain the requested and returned model names in evaluation records. This is provider behavior, not an application model upgrade claim. [DeepSeek model documentation](https://api-docs.deepseek.com/quick_start/pricing/)
+## Things that broke, and the fixes
 
-## Read in this order
+- **DeepSeek thinking mode returned empty answers.** With thinking on (the default), JSON responses came back empty with `finish_reason: length`. Revoir calls DeepSeek with thinking disabled.
+- **Walrus Memory 429s.** The relayer allows 60 weighted requests per minute per delegate key. One shared key for all users hit that, and some writes failed. Fixed with per-user delegate keys, a retry loop that honours `retry_after_seconds`, and `pnpm retry-failed` to re-archive anything that failed.
+- **Writes are asynchronous.** `remember` returns a job; Revoir polls until it is `done` before marking a message as remembered.
 
-| Document | What it resolves |
-|---|---|
-| [Product specification](docs/01-product.md) | Who this serves, why memory matters, scope, and success |
-| [Web experience](docs/02-conversations.md) | Sign-in, opportunity screens, chat examples, and failure messages |
-| [Architecture](docs/03-architecture.md) | Services, sequence diagrams, trust boundaries, and failure recovery |
-| [Memory design](docs/04-memory.md) | Evidence, claims, corrections, retrieval, retention, and deletion |
-| [Data and contracts](docs/05-data-and-contracts.md) | Database plan, application interfaces, schemas, and invariants |
-| [Provider integrations](docs/06-integrations.md) | Verified API surfaces, configuration, and integration gates |
-| [Security and privacy](docs/07-security-and-privacy.md) | Threats, tenant isolation, consent, and honest privacy promises |
-| [Evaluation](docs/08-evaluation.md) | How to prove memory improves decisions without hiding failures |
-| [Build plan](docs/09-build-plan.md) | Ordered implementation tasks and acceptance criteria |
-| [Operations and submission](docs/10-operations-and-submission.md) | Deployment, incidents, real usage, and hackathon evidence |
-| [Decisions and sources](docs/11-decisions-and-sources.md) | Tradeoffs, unresolved questions, and primary references |
-| [Account and opportunity flow](docs/12-account-and-opportunity-flow.md) | Google identity, the opportunity details column, and updates to general memory |
+## Security notes
 
-Machine-readable artifacts: [opportunity memory schema](contracts/memory-event.schema.json), [general-memory schema](contracts/general-memory-event.schema.json), [assessment schema](contracts/assessment.schema.json), [example opportunity memory](fixtures/example-memory.json), [example general memory](fixtures/example-general-memory.json), [example assessment](fixtures/example-assessment.json), [evaluation scenarios](fixtures/evaluation-cases.json), and [configuration template](.env.example).
-
-## First implementation milestone
-
-Build one complete interaction: sign in with Google → create an opportunity → save a sourced no-fee claim → confirm the MemWal job → update the opportunity record → restart the worker → submit a later fee request → retrieve earlier evidence → return a cited comparison → update relevant general memory. Use the **same opportunity for a legitimate correction** and verify both memory scopes update. This is the core product proof before additional features.
-
-The hackathon dates conflict: the official rules give **9 October, 14:00 UTC / 15:00 Lagos**, while the DeepSurge listing gives **16:00 UTC / 17:00 Lagos**. Plan against the earlier cutoff unless organizers clarify. Both real usage and elapsed usage time matter; a working demo built today cannot truthfully be described as having run for several days. See the [submission checklist](docs/10-operations-and-submission.md#submission-evidence).
-
-Existing projects in the parent directory are separate work. Their users, memories, and deployments are not SecondLook evidence.
+- Message content is AES-256-GCM encrypted in Postgres; MemWal namespaces use an HMAC of the user ID, so they don't reveal who the user is.
+- Users' wallet keys are encrypted at rest and can be exported from "My wallet" in the app.
+- The sponsor only signs gas for two fixed Move calls built by the server, never a transaction sent by a client.
+- The owner key stays in `.env.owner` and is never deployed.

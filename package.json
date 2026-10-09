@@ -25,6 +25,11 @@
     "db:migrate": "tsx --env-file=.env scripts/migrate.ts",
     "dev": "tsx --env-file=.env scripts/serve.ts",
     "typecheck": "tsc --noEmit",
-    "smoke": "tsx --env-file=.env scripts/smoke-memwal.ts"
+    "smoke": "tsx --env-file=.env scripts/smoke-memwal.ts",
+    "provision": "tsx scripts/provision-mainnet.ts",
+    "fund-sponsor": "tsx scripts/fund-sponsor.ts",
+    "e2e": "tsx --env-file=.env scripts/e2e.ts",
+    "evidence": "tsx --env-file=.env scripts/evidence.ts",
+    "retry-failed": "tsx --env-file=.env scripts/retry-failed.ts"
   }
 }

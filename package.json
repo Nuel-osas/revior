@@ -30,6 +30,7 @@
     "fund-sponsor": "tsx scripts/fund-sponsor.ts",
     "e2e": "tsx --env-file=.env scripts/e2e.ts",
     "evidence": "tsx --env-file=.env scripts/evidence.ts",
-    "retry-failed": "tsx --env-file=.env scripts/retry-failed.ts"
+    "retry-failed": "tsx --env-file=.env scripts/retry-failed.ts",
+    "telegram:webhook": "tsx --env-file=.env scripts/telegram-webhook.ts"
   }
 }

@@ -10,6 +10,8 @@ import { transcribeImage } from "../lib/providers.js";
 import { communityStats, reportOutcome } from "../lib/community.js";
 import { accuracy, learnedStats } from "../lib/learning.js";
 import { exportWallet, provisionWallet, publicView, walletFor } from "../lib/wallet.js";
+import { handleUpdate, webhookSecret } from "../lib/telegram.js";
+import { waitUntil } from "@vercel/functions";
 
 export const config = { maxDuration: 300 };
 
@@ -20,6 +22,12 @@ async function route(path: string, req: VercelRequest, res: VercelResponse) {
   const m = req.method ?? "GET";
   if (path === "auth/start") return startGoogle(res);
   if (path === "auth/callback") return finishGoogle(req, res);
+  if (path === "telegram" && m === "POST") {
+    // Telegram webhook: verify the secret, answer at once, process in the background (the pipeline takes ~20 s).
+    if (req.headers["x-telegram-bot-api-secret-token"] !== webhookSecret()) return res.status(401).json({ error: "bad secret" });
+    waitUntil(handleUpdate(body(req)));
+    return res.json({ ok: true });
+  }
   if (path === "stats" && m === "GET") {
     // Aggregate evidence only: no content, no identities.
     const rows = await sql`select u.id, count(e.*) filter (where e.archive_status = 'done') as confirmed, count(distinct e.opportunity_id) as opps,

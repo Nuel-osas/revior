@@ -87,6 +87,10 @@ pnpm evidence            # per real user: memories stored on Walrus, wallet addr
 
 Test users are created with `google_iss = 'test'` and are excluded from stats and from everything the platform learns.
 
+### Telegram bot (optional)
+
+Create a bot with @BotFather, put `TELEGRAM_BOT_TOKEN` in `.env` and in Vercel, deploy, then run `pnpm telegram:webhook https://your-domain`. Users forward a recruiter's messages (or screenshots) to the bot and get the same second look as on the web: the same pipeline, the same verdict, and their own wallet and Walrus Memory account. The webhook is verified with a secret derived from the bot token.
+
 ### Deploy
 
 The app is a single Vercel function (`api/router.ts`) plus static files in `public/`, with routes in `vercel.json`. Add the same variables from `.env` to the Vercel project (never `.env.owner`), set `PUBLIC_BASE_URL` and `GOOGLE_REDIRECT_URI` to your domain, and deploy with `vercel --prod`.
@@ -102,6 +106,7 @@ The app is a single Vercel function (`api/router.ts`) plus static files in `publ
 | `lib/community.ts` | Shared memory: hashed indicators, anonymised patterns |
 | `lib/verdict.ts`, `lib/learning.ts` | Scam verdict, and the model that learns from reported outcomes |
 | `lib/repo-scan.ts` | GitHub repo scan (downloads the tarball, never executes it) |
+| `lib/telegram.ts` | Telegram bot: forward messages, screenshots, /scan, /offers, /done |
 | `lib/links.ts` | Link check: lookalike brands, domain age via RDAP, shorteners, punycode, changed domains |
 | `public/index.html` | The whole web app |
 | `migrations/` | Postgres schema |

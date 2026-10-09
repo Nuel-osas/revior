@@ -10,6 +10,7 @@ Fake job offers rarely look fake on day one. "Applicants pay no fees" on Monday 
 | Telegram bot | [@revior_security_bot](https://t.me/revior_security_bot): forward a recruiter's messages or screenshots |
 | Demo video | https://youtu.be/DXSasOUvmM8 |
 | Article | [How I built a chatbot that remembers what recruiters promised you](https://medium.com/@pemmy606/how-i-built-a-chatbot-that-remembers-what-recruiters-promised-you-walrus-memory-deepseek-jev-e8fcc60db0f5) |
+| Guide for job seekers | [The Scam Is the Change](https://substack.com/profile/256342516-ruru/note/c-356439779) (Substack) |
 | Memory | Walrus Memory (`@mysten-incubation/memwal` 0.1.8) on Sui mainnet |
 | Models | DeepSeek V4 Flash (`deepseek-flash`, text and screenshots) and Jev by TypeSafe (claim comparison) |
 

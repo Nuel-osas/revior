@@ -180,8 +180,10 @@ export async function archive(mw: MemWal, text: string, namespace: string) {
       return job.job_id as string;
     } catch (e: any) {
       const msg = String(e?.message ?? e);
-      if (!/429|rate limit/i.test(msg) || attempt >= 4) throw e;
-      const wait = Number(msg.match(/retry_after_seconds"?:\s*(\d+)/)?.[1] ?? 20);
+      if (!(e?.status === 429 || /429|rate limit/i.test(msg)) || attempt >= 4) throw e;
+      // The SDK puts the Retry-After header on err.retryAfterSeconds and the raw body (with retry_after_seconds) on err.cause.
+      const fromBody = Number(String(e?.cause ?? "").match(/retry_after_seconds"?:\s*(\d+)/)?.[1]);
+      const wait = Number(e?.retryAfterSeconds) || fromBody || 20;
       await new Promise((r) => setTimeout(r, Math.min(wait, 70) * 1000 + attempt * 1000));
     }
   }

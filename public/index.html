@@ -607,14 +607,14 @@ function renderLanding() {
   <div class="lp">
     <nav class="lp-nav">
       <a class="lp-brand" href="#">${MARK}Revoir</a>
-      <div class="lp-links"><a href="#well">Community</a><a href="#scan">Repo scan</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#ownership">Ownership</a><a href="https://t.me/revior_security_bot" target="_blank">Telegram</a><a href="https://github.com/Nuel-osas/revior" target="_blank">GitHub</a></div>
+      <div class="lp-links"><a href="#jev">Jev</a><a href="#well">Community</a><a href="#scan">Repo scan</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#ownership">Ownership</a><a href="https://t.me/revior_security_bot" target="_blank">Telegram</a><a href="https://github.com/Nuel-osas/revior" target="_blank">GitHub</a></div>
       <a class="pill" href="/auth/google/start">Sign in ${ARROW}</a>
     </nav>
 
     <section class="lp-hero"><div class="bg">
       ${sparks}
       ${err ? `<div class="lp-err">${esc(err)}</div><br/>` : ""}
-      <span class="badge-pill"><span class="dots"><span style="background:#5e0eff">W</span><span style="background:#3395ee">S</span><span style="background:#14181b">J</span></span>Built on Walrus Memory · Sui mainnet</span>
+      <span class="badge-pill"><span class="dots"><span style="background:#5e0eff">W</span><span style="background:#3395ee">S</span><span style="background:#14181b">J</span></span>Walrus Memory remembers · Jev decides</span>
       <h1>See every offer <span class="gem">${EYE}</span> again, before you say yes.</h1>
       <p class="sub">Paste or forward each message from a recruiter or collaborator as it arrives, on the web or in Telegram. Revoir tells you if it looks like a scam, shows exactly what changed since their first message, and learns from what happened to everyone else.</p>
       <div class="hero-ctas">
@@ -660,6 +660,27 @@ function renderLanding() {
       <p>Powered by an open, verifiable stack</p>
       <div class="lp-logos">
         <span><b style="background:#5e0eff"></b>Walrus</span><span><b style="background:#3395ee;border-radius:50% 50% 50% 0"></b>Sui</span><span><b style="background:#4d6bfe;border-radius:50%"></b>DeepSeek</span><span><b style="background:#faf8f5;transform:rotate(45deg)"></b>Jev</span><span><b style="background:#cab1ff"></b>Seal</span>
+      </div>
+    </section>
+
+    <section class="lp-sec" id="jev">
+      <h2 class="two-tone"><span>DeepSeek reads. Walrus remembers.</span>Jev decides.</h2>
+      <p class="lede">Most AI tools ask a chatbot "is this a scam?" and get back a confident paragraph. Revoir doesn't. Every judgement goes to Jev, TypeSafe's decision model: it doesn't write text, it answers each question with calibrated probabilities. So every "this changed" and every verdict on Revoir is a number you can see, not a vibe.</p>
+      <div class="scan-pitch">
+        <div class="scan-points">
+          <div><span class="ic">1</span><div><b>Claim by claim, then against now.</b><p>For every earlier promise recalled from Walrus and every new claim on the same topic, Jev chooses one of four: contradiction, change, consistent, or unrelated.</p></div></div>
+          <div><span class="ic">2</span><div><b>The verdict is a probability.</b><p>"Likely scam" comes from Jev's probability that the offer, as remembered so far, is a scam, blended with what Revoir has learned from reported outcomes.</p></div></div>
+          <div><span class="ic">3</span><div><b>DeepSeek explains, it doesn't decide.</b><p>DeepSeek pulls the exact quotes out of each message and writes the explanation. Whether two promises clash is Jev's call.</p></div></div>
+          <a class="pill dark" href="/auth/google/start" style="align-self:flex-start;margin-top:6px">Try it on an offer ${ARROW}</a>
+        </div>
+        <div class="scan-demo">
+          <div class="sd-h"><span class="sd-badge" style="background:#ede7ff;color:#5e0eff">Jev</span><b>Then vs now</b><span class="sd-c">jev-latest</span></div>
+          <div class="sd-run"><div class="sd-t">S1 → S2 · fees</div><ul><li>"Applicants pay no fees."</li><li>"Send a refundable $60 onboarding deposit today."</li></ul></div>
+          <div class="sd-f"><span class="sev">0.90</span><b>contradiction</b><span class="loc">both can't hold</span></div>
+          <div class="sd-run" style="margin-top:12px"><div class="sd-t">S1 → S2 · channel</div><ul><li>"Onboarding happens only through our careers portal."</li><li>"Our HR partner will finish onboarding with you on Telegram."</li></ul></div>
+          <div class="sd-f"><span class="sev">0.98</span><b>contradiction</b><span class="loc">both can't hold</span></div>
+          <p class="sd-sum" style="margin-top:12px">Real Jev outputs on Revoir's test offer.</p>
+        </div>
       </div>
     </section>
 
@@ -734,7 +755,6 @@ function renderLanding() {
         </div>
       </div>
       <p class="lede" style="margin-top:22px;font-size:14px">Counts only. One vote per person per indicator, "known" needs two different people, and legit reports count too. Illustrative example.</p>
-      <div class="learn-strip" id="learnStrip"></div>
       <p class="lede" style="font-size:14px;margin-top:10px">Every reported outcome also teaches the verdict itself: Revoir learns how often each warning sign and tactic shows up in real scams versus legit offers, and blends that with Jev. The more people report, the more weight the learned model gets.</p>
     </section>
 
